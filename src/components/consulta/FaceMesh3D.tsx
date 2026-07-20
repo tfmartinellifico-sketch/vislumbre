@@ -2,15 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { FaceLandmarker } from "@mediapipe/tasks-vision";
 import type { Mark, ScenarioId } from "@/lib/regions";
 import { SCENARIOS } from "@/lib/regions";
 import type { LandmarkPoint } from "@/lib/faceLandmarks";
-import {
-  landmarksToCentered,
-  markToVec3,
-  trianglesFromConnections,
-} from "@/lib/faceMesh3d";
+import { applyLandmarkRelief, markOnPhotoPlane } from "@/lib/faceMesh3d";
 
 type Props = {
   imageUrl: string;
@@ -21,6 +16,10 @@ type Props = {
   className?: string;
 };
 
+/**
+ * Mesa 3D: a foto real como plano com relevo suave + volumes.
+ * (Malha MediaPipe pura falhava visualmente; a foto é o âncora legível.)
+ */
 export function FaceMesh3D({
   imageUrl,
   faceLandmarks,
@@ -46,121 +45,34 @@ export function FaceMesh3D({
 
     let disposed = false;
     let raf = 0;
-    const disposables: { dispose: () => void }[] = [];
+    const cleanups: Array<() => void> = [];
 
     const w = mount.clientWidth || 640;
-    const h = Math.max(380, Math.round(w * 0.9));
+    const h = Math.max(400, Math.round(w * 0.92));
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(w, h);
-    renderer.setClearColor(0x121a19, 1);
+    renderer.setClearColor(0x101816, 1);
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(28, w / h, 0.1, 100);
-    camera.position.set(0, 0.02, 2.85);
+    const camera = new THREE.PerspectiveCamera(30, w / h, 0.05, 50);
+    camera.position.set(0, 0, 3.1);
 
-    scene.add(new THREE.HemisphereLight(0xfff6ec, 0x1c3d39, 1.1));
-    const key = new THREE.DirectionalLight(0xffffff, 0.9);
-    key.position.set(0.5, 1.1, 2.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+    const key = new THREE.DirectionalLight(0xffffff, 0.55);
+    key.position.set(0.4, 0.8, 2.5);
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0xa8c4bc, 0.4);
-    fill.position.set(-1.4, 0.3, 1.2);
-    scene.add(fill);
 
     const root = new THREE.Group();
     scene.add(root);
 
-    const { positions, uvs } = landmarksToCentered(faceLandmarks);
-    const tris = trianglesFromConnections(
-      FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-      faceLandmarks.length,
-    );
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-    geo.setIndex(new THREE.BufferAttribute(tris, 1));
-    geo.computeVertexNormals();
-    disposables.push(geo);
-
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      imageUrl,
-      (texture) => {
-        if (disposed) {
-          texture.dispose();
-          return;
-        }
-        texture.colorSpace = THREE.SRGBColorSpace;
-        disposables.push(texture);
-
-        const mat = new THREE.MeshStandardMaterial({
-          map: texture,
-          roughness: 0.78,
-          metalness: 0.02,
-          side: THREE.DoubleSide,
-        });
-        disposables.push(mat);
-        const head = new THREE.Mesh(geo, mat);
-        root.add(head);
-      },
-      undefined,
-      () => {
-        if (disposed) return;
-        const mat = new THREE.MeshStandardMaterial({
-          color: 0xc9b8a4,
-          roughness: 0.7,
-          side: THREE.DoubleSide,
-        });
-        disposables.push(mat);
-        root.add(new THREE.Mesh(geo, mat));
-      },
-    );
-
-    // Contornos legíveis (rosto, olhos, boca)
-    const contourGroups = [
-      FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
-      FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
-      FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
-      FaceLandmarker.FACE_LANDMARKS_LIPS,
-      FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
-      FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
-    ];
-    const contourPos: number[] = [];
-    for (const group of contourGroups) {
-      for (const c of group) {
-        const a = c.start;
-        const b = c.end;
-        if (a * 3 + 2 >= positions.length || b * 3 + 2 >= positions.length) {
-          continue;
-        }
-        contourPos.push(
-          positions[a * 3],
-          positions[a * 3 + 1],
-          positions[a * 3 + 2] + 0.002,
-          positions[b * 3],
-          positions[b * 3 + 1],
-          positions[b * 3 + 2] + 0.002,
-        );
-      }
-    }
-    const contourGeo = new THREE.BufferGeometry();
-    contourGeo.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(contourPos, 3),
-    );
-    const contourMat = new THREE.LineBasicMaterial({
-      color: 0x1c3d39,
-      transparent: true,
-      opacity: 0.35,
-    });
-    disposables.push(contourGeo, contourMat);
-    root.add(new THREE.LineSegments(contourGeo, contourMat));
-
     const volumes = new THREE.Group();
     root.add(volumes);
+
+    let planeW = 1.6;
+    let planeH = 2.0;
 
     function syncVolumes() {
       while (volumes.children.length) {
@@ -168,40 +80,105 @@ export function FaceMesh3D({
         volumes.remove(child);
         if (child instanceof THREE.Mesh) {
           child.geometry.dispose();
-          const m = child.material;
-          if (Array.isArray(m)) m.forEach((x) => x.dispose());
-          else m.dispose();
+          const mat = child.material;
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+          else mat.dispose();
         }
       }
       const mult =
         SCENARIOS.find((s) => s.id === scenarioRef.current)?.multiplier ?? 1;
       const warn = scenarioRef.current === "nao_indicado";
       marksRef.current.forEach((mark) => {
-        const v = markToVec3(mark, faceLandmarks, positions);
-        if (!v) return;
-        const r = 0.04 + mark.intensity * mult * 0.07;
+        const p = markOnPhotoPlane(mark, faceLandmarks, planeW, planeH);
+        if (!p) return;
+        const r = 0.055 + mark.intensity * mult * 0.09;
         const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(r, 20, 20),
+          new THREE.SphereGeometry(r, 28, 28),
           new THREE.MeshStandardMaterial({
             color: warn ? 0x9a4d2e : 0x2f5f58,
             transparent: true,
-            opacity: 0.48,
-            roughness: 0.3,
+            opacity: 0.5,
+            roughness: 0.35,
             depthWrite: false,
           }),
         );
-        mesh.position.set(v[0], v[1], v[2]);
+        mesh.position.set(p.x, p.y, p.z + r * 0.35);
         volumes.add(mesh);
       });
     }
-    syncVolumes();
 
-    const banner = makeBanner();
-    banner.position.set(0, -1.05, 0.15);
-    root.add(banner);
+    const img = new Image();
+    img.onload = () => {
+      if (disposed) return;
 
-    let yaw = 0.22;
-    let targetYaw = 0.22;
+      const aspect = img.naturalWidth / Math.max(1, img.naturalHeight);
+      planeH = 2.05;
+      planeW = planeH * Math.min(aspect, 1.15);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      cleanups.push(() => texture.dispose());
+
+      const geo = new THREE.PlaneGeometry(planeW, planeH, 72, 96);
+      const pos = geo.attributes.position;
+      applyLandmarkRelief(
+        pos.array as Float32Array,
+        pos.count,
+        faceLandmarks,
+        planeW,
+        planeH,
+        0.48,
+      );
+      geo.computeVertexNormals();
+      cleanups.push(() => geo.dispose());
+
+      const mat = new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.85,
+        metalness: 0,
+        side: THREE.FrontSide,
+      });
+      cleanups.push(() => mat.dispose());
+
+      const photo = new THREE.Mesh(geo, mat);
+      root.add(photo);
+
+      // Moldura sutil atrás
+      const back = new THREE.Mesh(
+        new THREE.PlaneGeometry(planeW + 0.04, planeH + 0.04),
+        new THREE.MeshBasicMaterial({ color: 0x0e1615 }),
+      );
+      back.position.z = -0.02;
+      root.add(back);
+      cleanups.push(() => {
+        back.geometry.dispose();
+        (back.material as THREE.Material).dispose();
+      });
+
+      const banner = makeBanner();
+      banner.position.set(0, -planeH * 0.5 - 0.18, 0.05);
+      root.add(banner);
+
+      syncVolumes();
+    };
+    img.onerror = () => {
+      if (!disposed) {
+        // fallback mínimo
+        syncVolumes();
+      }
+    };
+    img.src = imageUrl;
+
+    let yaw = 0.2;
+    let targetYaw = 0.2;
     let dragging = false;
     let lastX = 0;
 
@@ -213,9 +190,12 @@ export function FaceMesh3D({
     }
     function onPointerMove(e: PointerEvent) {
       if (!dragging) return;
-      const dx = e.clientX - lastX;
+      targetYaw = THREE.MathUtils.clamp(
+        targetYaw + (e.clientX - lastX) * 0.005,
+        -0.55,
+        0.55,
+      );
       lastX = e.clientX;
-      targetYaw = THREE.MathUtils.clamp(targetYaw + dx * 0.005, -0.6, 0.6);
     }
     function onPointerUp(e: PointerEvent) {
       dragging = false;
@@ -235,9 +215,8 @@ export function FaceMesh3D({
     renderer.domElement.addEventListener("pointercancel", onPointerUp);
 
     const onResize = () => {
-      if (!mount) return;
       const nw = mount.clientWidth || 640;
-      const nh = Math.max(380, Math.round(nw * 0.9));
+      const nh = Math.max(400, Math.round(nw * 0.92));
       camera.aspect = nw / nh;
       camera.updateProjectionMatrix();
       renderer.setSize(nw, nh);
@@ -252,11 +231,11 @@ export function FaceMesh3D({
       t0 = now;
       syncVolumes();
       if (!dragging && autoRef.current) {
-        targetYaw = Math.sin(now * 0.00032) * 0.28;
+        targetYaw = Math.sin(now * 0.0003) * 0.26;
       }
-      yaw += (targetYaw - yaw) * Math.min(1, dt * 6);
+      yaw += (targetYaw - yaw) * Math.min(1, dt * 7);
       root.rotation.y = yaw;
-      root.rotation.x = -0.04;
+      root.rotation.x = -0.03;
       renderer.render(scene, camera);
     }
     raf = requestAnimationFrame(tick);
@@ -269,7 +248,7 @@ export function FaceMesh3D({
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
-      disposables.forEach((d) => d.dispose());
+      cleanups.forEach((fn) => fn());
       renderer.dispose();
       if (renderer.domElement.parentElement === mount) {
         mount.removeChild(renderer.domElement);
@@ -281,7 +260,7 @@ export function FaceMesh3D({
     <div className={`relative overflow-hidden rounded-2xl bg-ink ${className}`}>
       <div ref={mountRef} className="w-full" />
       <p className="pointer-events-none absolute bottom-3 left-3 right-3 text-center text-[11px] text-mist/90">
-        Arraste para girar · demonstração para conversa — não é o resultado
+        Arraste para girar · sua foto em volume · não é o resultado
       </p>
     </div>
   );
@@ -293,7 +272,7 @@ function makeBanner() {
   canvas.height = 128;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    ctx.fillStyle = "rgba(14, 22, 21, 0.88)";
+    ctx.fillStyle = "rgba(14, 22, 21, 0.9)";
     ctx.fillRect(0, 0, 1024, 128);
     ctx.fillStyle = "#fafcfb";
     ctx.font = "600 40px sans-serif";
@@ -306,5 +285,5 @@ function makeBanner() {
     transparent: true,
     depthWrite: false,
   });
-  return new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.28), mat);
+  return new THREE.Mesh(new THREE.PlaneGeometry(2.1, 0.26), mat);
 }
