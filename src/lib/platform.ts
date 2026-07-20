@@ -76,7 +76,7 @@ async function notifyInviteEmail(input: {
   environment?: "demo" | "client";
 }) {
   try {
-    await fetch("/api/email/invite", {
+    const res = await fetch("/api/email/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -87,8 +87,13 @@ async function notifyInviteEmail(input: {
         environment: input.environment ?? "client",
       }),
     });
+    const data = (await res.json()) as { sent?: boolean; reason?: string };
+    return {
+      sent: Boolean(data.sent),
+      reason: data.reason,
+    };
   } catch {
-    /* e-mail é best-effort */
+    return { sent: false, reason: "Falha de rede ao enviar e-mail" };
   }
 }
 
@@ -277,7 +282,7 @@ export async function createClinicAsAdmin(input: {
     usedAt: null,
   };
   await setDoc(inviteRef, invite);
-  void notifyInviteEmail({
+  const emailResult = await notifyInviteEmail({
     to: clinic.ownerEmail,
     clinicName: clinic.name,
     inviteId: inviteRef.id,
@@ -285,7 +290,12 @@ export async function createClinicAsAdmin(input: {
     environment,
   });
 
-  return { clinicId: clinicRef.id, inviteId: inviteRef.id };
+  return {
+    clinicId: clinicRef.id,
+    inviteId: inviteRef.id,
+    emailSent: emailResult.sent,
+    emailReason: emailResult.reason,
+  };
 }
 
 export async function listClinics(): Promise<Clinic[]> {
@@ -340,19 +350,25 @@ export async function liberateDemoFromLead(leadId: string) {
     const existing = await loadClinic(lead.clinicId);
     if (existing) {
       await updateDoc(doc(db, "leads", leadId), { status: "demo_liberado" });
-      const inviteId = await createMemberInvite({
+      const invite = await createMemberInvite({
         clinicId: existing.id,
         clinicName: existing.name,
         email: lead.email,
         role: "owner",
         bypassSeatCheck: true,
       });
-      return { clinicId: existing.id, inviteId, reused: true };
+      return {
+        clinicId: existing.id,
+        inviteId: invite.inviteId,
+        reused: true,
+        emailSent: invite.emailSent,
+        emailReason: invite.emailReason,
+      };
     }
   }
 
   const company = (lead.company || lead.clinic || lead.name).trim() || "Demo";
-  const { clinicId, inviteId } = await createClinicAsAdmin({
+  const created = await createClinicAsAdmin({
     name: company,
     city: lead.city || "",
     ownerEmail: lead.email,
@@ -365,9 +381,15 @@ export async function liberateDemoFromLead(leadId: string) {
   });
   await updateDoc(doc(db, "leads", leadId), {
     status: "demo_liberado",
-    clinicId,
+    clinicId: created.clinicId,
   });
-  return { clinicId, inviteId, reused: false };
+  return {
+    clinicId: created.clinicId,
+    inviteId: created.inviteId,
+    reused: false,
+    emailSent: created.emailSent,
+    emailReason: created.emailReason,
+  };
 }
 
 export async function liberateClientFromLead(
@@ -386,7 +408,7 @@ export async function liberateClientFromLead(
     await promoteClinicToClient(lead.clinicId, plan);
     await updateDoc(doc(db, "leads", leadId), { status: "cliente_liberado" });
     const clinic = await loadClinic(lead.clinicId);
-    const inviteId = clinic
+    const invite = clinic
       ? await createMemberInvite({
           clinicId: clinic.id,
           clinicName: clinic.name,
@@ -395,11 +417,17 @@ export async function liberateClientFromLead(
           bypassSeatCheck: true,
         })
       : null;
-    return { clinicId: lead.clinicId, inviteId, reused: true };
+    return {
+      clinicId: lead.clinicId,
+      inviteId: invite?.inviteId ?? null,
+      reused: true,
+      emailSent: invite?.emailSent,
+      emailReason: invite?.emailReason,
+    };
   }
 
   const company = (lead.company || lead.clinic || lead.name).trim() || "Clínica";
-  const { clinicId, inviteId } = await createClinicAsAdmin({
+  const created = await createClinicAsAdmin({
     name: company,
     city: lead.city || "",
     ownerEmail: lead.email,
@@ -412,9 +440,15 @@ export async function liberateClientFromLead(
   });
   await updateDoc(doc(db, "leads", leadId), {
     status: "cliente_liberado",
-    clinicId,
+    clinicId: created.clinicId,
   });
-  return { clinicId, inviteId, reused: false };
+  return {
+    clinicId: created.clinicId,
+    inviteId: created.inviteId,
+    reused: false,
+    emailSent: created.emailSent,
+    emailReason: created.emailReason,
+  };
 }
 
 export async function loadClinic(clinicId: string): Promise<Clinic | null> {
@@ -482,7 +516,7 @@ export async function createMemberInvite(input: {
     usedAt: null,
   } satisfies Omit<Invite, "id">);
 
-  void notifyInviteEmail({
+  const emailResult = await notifyInviteEmail({
     to: email,
     clinicName: input.clinicName,
     inviteId: ref.id,
@@ -490,7 +524,7 @@ export async function createMemberInvite(input: {
     environment: clinic.environment,
   });
 
-  return ref.id;
+  return { inviteId: ref.id, emailSent: emailResult.sent, emailReason: emailResult.reason };
 }
 
 export async function loadInvite(inviteId: string): Promise<Invite | null> {

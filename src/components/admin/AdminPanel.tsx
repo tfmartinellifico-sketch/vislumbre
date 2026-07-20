@@ -323,9 +323,11 @@ export function AdminPanel() {
                               const link = `${window.location.origin}/entrar?invite=${r.inviteId}`;
                               setInviteLink(link);
                               setMsg(
-                                r.reused
-                                  ? "Demo já vinculada — novo convite gerado."
-                                  : "Demo liberada. Convite enviado (se Resend) e link abaixo.",
+                                r.emailSent
+                                  ? r.reused
+                                    ? "Demo já vinculada — novo convite gerado e e-mail enviado."
+                                    : "Demo liberada. E-mail de convite enviado e link abaixo."
+                                  : `Demo liberada, mas o e-mail falhou${r.emailReason ? ` (${r.emailReason})` : ""}. Copie o link abaixo e envie manualmente.`,
                               );
                               await refresh();
                             } catch (err) {
@@ -359,7 +361,9 @@ export function AdminPanel() {
                                 );
                               }
                               setMsg(
-                                "Cliente liberado (ambiente client, status ativo).",
+                                r.emailSent
+                                  ? "Cliente liberado. E-mail de convite enviado."
+                                  : `Cliente liberado. E-mail falhou${r.emailReason ? ` (${r.emailReason})` : ""} — use o link abaixo se houver.`,
                               );
                               await refresh();
                             } catch (err) {
@@ -457,7 +461,7 @@ export function AdminPanel() {
                       <button
                         type="button"
                         onClick={async () => {
-                          const id = await createMemberInvite({
+                          const invite = await createMemberInvite({
                             clinicId: c.id,
                             clinicName: c.name,
                             email: c.ownerEmail,
@@ -465,10 +469,12 @@ export function AdminPanel() {
                             bypassSeatCheck: true,
                           });
                           setInviteLink(
-                            `${window.location.origin}/entrar?invite=${id}`,
+                            `${window.location.origin}/entrar?invite=${invite.inviteId}`,
                           );
                           setMsg(
-                            "Novo convite gerado e e-mail disparado (se Resend ok).",
+                            invite.emailSent
+                              ? "Novo convite gerado e e-mail enviado."
+                              : `Convite gerado, mas e-mail falhou${invite.emailReason ? ` (${invite.emailReason})` : ""}. Use o link.`,
                           );
                         }}
                         className="rounded-lg bg-sea/10 px-2.5 py-1 text-[11px] text-sea-deep"

@@ -600,17 +600,19 @@ export function ClinicaPanel() {
                 type="button"
                 onClick={async () => {
                   try {
-                    const id = await createMemberInvite({
+                    const invite = await createMemberInvite({
                       clinicId: clinic.id,
                       clinicName: clinic.name,
                       email: inviteEmail,
                       role: "member",
                     });
                     setInviteLink(
-                      `${window.location.origin}/entrar?invite=${id}`,
+                      `${window.location.origin}/entrar?invite=${invite.inviteId}`,
                     );
                     setActionMsg(
-                      "Convite gerado e e-mail enviado (se Resend estiver configurado).",
+                      invite.emailSent
+                        ? "Convite gerado e e-mail enviado."
+                        : `Convite gerado. E-mail falhou${invite.emailReason ? ` (${invite.emailReason})` : ""} — envie o link manualmente.`,
                     );
                   } catch (err) {
                     setActionMsg(
