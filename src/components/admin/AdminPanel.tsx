@@ -143,42 +143,29 @@ export function AdminPanel() {
       <div className="mb-8 max-w-md">
         <FirebaseAccount
           onUserChange={setUser}
-          defaultMode="signup"
-          hint="O e-mail em ADMIN_EMAILS na Vercel só define quem é admin. A senha não existe ainda: use Criar conta com esse mesmo e-mail e invente uma senha agora."
+          defaultMode="login"
+          initialEmail={
+            process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",")[0]?.trim() ?? ""
+          }
         />
+        {!user && (
+          <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+            Se não lembrar a senha, clique em{" "}
+            <strong className="font-medium text-ink">Recuperar senha</strong> —
+            o Firebase envia o link para o seu e-mail.
+          </p>
+        )}
       </div>
 
       {user && !isAdmin && (
-        <div className="max-w-xl space-y-2 rounded-xl border border-warn/30 bg-warn/[0.05] px-4 py-4 text-[14px] text-warn">
-          <p className="font-medium">Este e-mail ainda não é administrador.</p>
-          <p className="text-[13px] leading-relaxed text-ink-soft">
-            Na Vercel, defina{" "}
-            <code className="text-[12px]">NEXT_PUBLIC_ADMIN_EMAILS</code> e{" "}
-            <code className="text-[12px]">ADMIN_EMAILS</code> com este mesmo
-            e-mail, faça redeploy e entre de novo em{" "}
-            <Link href="/admin" className="text-sea-deep underline">
-              /admin
-            </Link>
-            . Guia: docs/operacao-plataforma.md (seção “Como virar admin”).
+        <div className="max-w-xl rounded-xl border border-warn/30 bg-warn/[0.05] px-4 py-4 text-[14px]">
+          <p className="font-medium text-warn">Sem permissão de administração</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+            Você entrou, mas este e-mail não está autorizado no painel. Confirme
+            com quem configura a plataforma se o seu e-mail está na lista de
+            administradores.
           </p>
         </div>
-      )}
-
-      {!user && (
-        <ol className="mt-2 max-w-md list-decimal space-y-2 pl-5 text-[13px] leading-relaxed text-ink-soft">
-          <li>
-            Confirme na Vercel que{" "}
-            <code className="text-[12px]">ADMIN_EMAILS</code> tem o seu e-mail.
-          </li>
-          <li>
-            Acima, na aba <strong className="text-ink">Criar conta</strong>, use
-            esse e-mail e uma senha nova (mín. 6 caracteres).
-          </li>
-          <li>
-            Se a conta já existir, use <strong className="text-ink">Entrar</strong>{" "}
-            ou <strong className="text-ink">Recuperar senha</strong>.
-          </li>
-        </ol>
       )}
 
       {isAdmin && (

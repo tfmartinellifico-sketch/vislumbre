@@ -15,20 +15,19 @@ import { APP_COPY } from "@/lib/app-copy";
 
 type Props = {
   onUserChange: (user: User | null) => void;
-  /** Abre direto em criar conta (ex.: primeiro acesso admin). */
   defaultMode?: "login" | "signup";
-  /** Texto de ajuda acima do formulário. */
-  hint?: string;
+  /** Pré-preenche o e-mail (ex.: admin conhecido). */
+  initialEmail?: string;
 };
 
 export function FirebaseAccount({
   onUserChange,
   defaultMode = "login",
-  hint,
+  initialEmail = "",
 }: Props) {
   const ac = APP_COPY.account;
   const [user, setUser] = useState<User | null>(null);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [busy, setBusy] = useState(false);
@@ -88,7 +87,18 @@ export function FirebaseAccount({
       if (mode === "login") await signInWithEmail(email, password);
       else await signUpWithEmail(email, password);
     } catch (error) {
-      setMessage(friendlyFirebaseError(error));
+      const code =
+        typeof error === "object" && error && "code" in error
+          ? String(error.code)
+          : "";
+      if (code.includes("email-already-in-use")) {
+        setMode("login");
+        setMessage(
+          "Este e-mail já tem conta. Use Entrar com a senha, ou Recuperar senha abaixo.",
+        );
+      } else {
+        setMessage(friendlyFirebaseError(error));
+      }
     } finally {
       setBusy(false);
     }
@@ -100,9 +110,13 @@ export function FirebaseAccount({
       return;
     }
     setBusy(true);
+    setMessage("");
     try {
       await resetPassword(email);
-      setMessage("E-mail de recuperação enviado.");
+      setMode("login");
+      setMessage(
+        "Enviamos um e-mail para redefinir a senha. Abra a caixa de entrada (e o spam) e siga o link.",
+      );
     } catch (error) {
       setMessage(friendlyFirebaseError(error));
     } finally {
@@ -112,15 +126,15 @@ export function FirebaseAccount({
 
   return (
     <div className="rounded-lg border border-ink/10 bg-paper/90 p-4">
-      {hint && (
-        <p className="mb-4 text-[13px] leading-relaxed text-ink-soft">{hint}</p>
-      )}
       <div className="flex gap-2">
         {(["login", "signup"] as const).map((item) => (
           <button
             key={item}
             type="button"
-            onClick={() => setMode(item)}
+            onClick={() => {
+              setMode(item);
+              setMessage("");
+            }}
             className={`rounded-md px-3 py-1.5 text-xs ${
               mode === item ? "bg-sea-deep text-paper" : "text-ink-soft"
             }`}
@@ -129,12 +143,6 @@ export function FirebaseAccount({
           </button>
         ))}
       </div>
-      {mode === "signup" && (
-        <p className="mt-3 text-[12px] leading-relaxed text-sea-deep">
-          Na primeira vez, escolha uma senha (mín. 6 caracteres). Depois use a
-          aba Entrar com a mesma senha.
-        </p>
-      )}
       <div className="mt-4 space-y-3">
         <input
           type="email"
@@ -166,7 +174,7 @@ export function FirebaseAccount({
         >
           {ac.forgot}
         </button>
-        {message && <p className="text-xs text-warn">{message}</p>}
+        {message && <p className="text-xs leading-relaxed text-warn">{message}</p>}
       </div>
     </div>
   );
@@ -177,9 +185,19 @@ function friendlyFirebaseError(error: unknown) {
     typeof error === "object" && error && "code" in error
       ? String(error.code)
       : "";
-  if (code.includes("invalid-credential")) return "E-mail ou senha incorretos.";
-  if (code.includes("email-already-in-use")) return "Este e-mail já possui conta.";
+  if (code.includes("invalid-credential") || code.includes("wrong-password")) {
+    return "E-mail ou senha incorretos. Se não lembra a senha, use Recuperar senha.";
+  }
+  if (code.includes("user-not-found")) {
+    return "Conta não encontrada. Use a aba Criar conta.";
+  }
+  if (code.includes("email-already-in-use")) {
+    return "Este e-mail já tem conta. Use Entrar ou Recuperar senha.";
+  }
   if (code.includes("weak-password")) return "Use uma senha mais forte.";
   if (code.includes("too-many-requests")) return "Muitas tentativas. Aguarde um pouco.";
-  return "Não foi possível concluir. Confira a configuração do Firebase.";
+  if (code.includes("auth/unauthorized-continue-uri") || code.includes("auth/invalid-continue-uri")) {
+    return "Domínio não autorizado no Firebase. Adicione vislumbre.me em Authentication → Domínios.";
+  }
+  return "Não foi possível concluir. Tente de novo ou use Recuperar senha.";
 }
