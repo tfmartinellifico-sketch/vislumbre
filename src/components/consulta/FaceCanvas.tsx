@@ -8,7 +8,8 @@ import {
   drawIllustrativeVolume,
 } from "@/lib/ethicalRender";
 import type { Measure, Vector } from "@/lib/planning";
-import { CAUTION_ZONES } from "@/lib/cautionZones";
+import { cautionZonesOnFace } from "@/lib/cautionZones";
+import type { LandmarkPoint } from "@/lib/faceLandmarks";
 
 export type DrawMode = "mark" | "vector" | "measure";
 
@@ -26,6 +27,8 @@ type Props = {
   onAddMeasure?: (measure: Omit<Measure, "id">) => void;
   interactive?: boolean;
   showCautionZones?: boolean;
+  /** Landmarks da foto — obrigatório para zonas de atenção no rosto. */
+  faceLandmarks?: LandmarkPoint[] | null;
 };
 
 const REGION_COLOR: Record<RegionId, string> = {
@@ -52,6 +55,7 @@ export function FaceCanvas({
   onAddMeasure,
   interactive = true,
   showCautionZones = false,
+  faceLandmarks = null,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -87,24 +91,23 @@ export function FaceCanvas({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      if (showCautionZones) {
-        CAUTION_ZONES.forEach((zone) => {
-          const x = zone.x * canvas.width;
-          const y = zone.y * canvas.height;
-          const r = zone.r * canvas.width;
-          ctx.beginPath();
-          ctx.arc(x, y, r, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(154, 77, 46, 0.65)";
-          ctx.setLineDash([5, 4]);
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.fillStyle = "rgba(154, 77, 46, 0.12)";
-          ctx.fill();
-          ctx.fillStyle = "rgba(154, 77, 46, 0.9)";
-          ctx.font = "11px sans-serif";
-          ctx.fillText(zone.label, x - r * 0.4, y - r - 4);
-        });
+      if (showCautionZones && faceLandmarks?.length) {
+        cautionZonesOnFace(faceLandmarks, canvas.width, canvas.height).forEach(
+          (zone) => {
+            ctx.beginPath();
+            ctx.arc(zone.x, zone.y, zone.r, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(154, 77, 46, 0.7)";
+            ctx.setLineDash([5, 4]);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(154, 77, 46, 0.1)";
+            ctx.fill();
+            ctx.fillStyle = "rgba(154, 77, 46, 0.95)";
+            ctx.font = "600 11px sans-serif";
+            ctx.fillText(zone.label, zone.x - zone.r * 0.35, zone.y - zone.r - 4);
+          },
+        );
       }
 
       const faceWEstimate = (() => {
@@ -160,7 +163,15 @@ export function FaceCanvas({
     }
 
     draw();
-  }, [imageUrl, marks, vectors, measures, scenario, showCautionZones]);
+  }, [
+    imageUrl,
+    marks,
+    vectors,
+    measures,
+    scenario,
+    showCautionZones,
+    faceLandmarks,
+  ]);
 
   function norm(e: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;

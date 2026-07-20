@@ -22,7 +22,7 @@ export function ArPreview({ marks, scenario }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [meshOn, setMeshOn] = useState(false);
-  const [guideOn, setGuideOn] = useState(true);
+  const [guideOn, setGuideOn] = useState(false);
   const [faceOk, setFaceOk] = useState(false);
   const [status, setStatus] = useState("Preparando visualização…");
   const marksRef = useRef(marks);
@@ -89,47 +89,37 @@ export function ArPreview({ marks, scenario }: Props) {
       w: number,
       h: number,
       locked: boolean,
+      faceOval?: { cx: number; cy: number; rx: number; ry: number } | null,
     ) {
       if (!guideOnRef.current) return;
-      const cx = w * 0.5;
-      const cy = h * 0.46;
-      const rx = w * 0.22;
-      const ry = h * 0.34;
+      const cx = faceOval?.cx ?? w * 0.5;
+      const cy = faceOval?.cy ?? h * 0.48;
+      const rx = faceOval?.rx ?? w * 0.16;
+      const ry = faceOval?.ry ?? h * 0.22;
 
       ctx.save();
-      ctx.fillStyle = "rgba(14, 22, 21, 0.28)";
-      ctx.beginPath();
-      ctx.rect(0, 0, w, h);
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2, true);
-      ctx.fill("evenodd");
+      if (!locked) {
+        ctx.fillStyle = "rgba(14, 22, 21, 0.22)";
+        ctx.beginPath();
+        ctx.rect(0, 0, w, h);
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2, true);
+        ctx.fill("evenodd");
+      }
 
       ctx.strokeStyle = locked
-        ? "rgba(107, 154, 144, 0.9)"
-        : "rgba(250, 252, 251, 0.75)";
-      ctx.lineWidth = locked ? 2.5 : 1.5;
+        ? "rgba(107, 154, 144, 0.55)"
+        : "rgba(250, 252, 251, 0.7)";
+      ctx.lineWidth = locked ? 1.5 : 1.25;
       ctx.setLineDash(locked ? [] : [8, 6]);
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
-
-      const arm = Math.min(w, h) * 0.04;
-      ctx.strokeStyle = "rgba(203, 184, 154, 0.7)";
-      ctx.lineWidth = 2;
-      [
-        [24, 24, 1, 1],
-        [w - 24, 24, -1, 1],
-        [24, h - 24, 1, -1],
-        [w - 24, h - 24, -1, -1],
-      ].forEach(([x, y, sx, sy]) => {
-        ctx.beginPath();
-        ctx.moveTo(x, y + sy * arm);
-        ctx.lineTo(x, y);
-        ctx.lineTo(x + sx * arm, y);
-        ctx.stroke();
-      });
       ctx.restore();
     }
+
+    let lastFaceOval: { cx: number; cy: number; rx: number; ry: number } | null =
+      null;
 
     function loop() {
       const video = videoRef.current;
@@ -166,6 +156,22 @@ export function ArPreview({ marks, scenario }: Props) {
               setStatus("Rosto alinhado · volumes sobrepostos");
             }
 
+            const eyeL = face[33];
+            const eyeR = face[263];
+            const chin = face[152];
+            const brow = face[10];
+            if (eyeL && eyeR && chin && brow) {
+              const lx = (1 - eyeL.x) * w;
+              const rx = (1 - eyeR.x) * w;
+              const iod = Math.abs(lx - rx);
+              lastFaceOval = {
+                cx: (lx + rx) / 2,
+                cy: ((brow.y + chin.y) / 2) * h,
+                rx: iod * 1.35,
+                ry: Math.abs(chin.y - brow.y) * h * 0.72,
+              };
+            }
+
             if (meshOnRef.current) {
               ctx.fillStyle = "rgba(107, 154, 144, 0.4)";
               for (let i = 0; i < face.length; i += 5) {
@@ -182,7 +188,6 @@ export function ArPreview({ marks, scenario }: Props) {
               1;
             const warn = scenarioRef.current === "nao_indicado";
             const faceW = faceWidthPx(face, w);
-            // Intensidade visual proporcional ao rosto, não à largura do vídeo
             const sizeScale = Math.min(1.15, Math.max(0.45, faceW / 280));
 
             marksRef.current.forEach((mark) => {
@@ -199,7 +204,7 @@ export function ArPreview({ marks, scenario }: Props) {
                 smoothed.y,
                 mark.intensity * sizeScale,
                 mult,
-                { warn },
+                { warn, faceWidthPx: faceW },
               );
             });
           } else {
@@ -209,12 +214,13 @@ export function ArPreview({ marks, scenario }: Props) {
               setFaceOk(false);
               setStatus("Posicione o rosto na moldura");
               smoothRef.current = {};
+              lastFaceOval = null;
             }
             locked = false;
           }
         }
 
-        drawGuide(ctx, w, h, locked);
+        drawGuide(ctx, w, h, locked, lastFaceOval);
 
         const label =
           SCENARIOS.find((s) => s.id === scenarioRef.current)?.label ??

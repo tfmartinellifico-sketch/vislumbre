@@ -709,6 +709,7 @@ export function ConsultaApp() {
                 scenario={scenario}
                 drawMode={drawMode}
                 showCautionZones={showCautionZones && step === "marcar"}
+                faceLandmarks={faceLandmarks}
                 onAddMark={(partial) =>
                   setMarks((prev) => [
                     ...prev,
@@ -979,10 +980,12 @@ export function ConsultaApp() {
                   type="checkbox"
                   checked={showCautionZones}
                   onChange={(e) => setShowCautionZones(e.target.checked)}
-                  className="mt-0.5 accent-warn"
+                  disabled={!faceLandmarks?.length}
+                  className="mt-0.5 accent-warn disabled:opacity-40"
                 />
-                Mostrar zonas de atenção (mapa genérico — não é anatomia desta
-                paciente)
+                {faceLandmarks?.length
+                  ? "Mostrar zonas de atenção no rosto (educativo — não é mapa vascular)"
+                  : "Zonas de atenção: aguardando detecção do rosto na foto"}
               </label>
 
               <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-ink-soft">
