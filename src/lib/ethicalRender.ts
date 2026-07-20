@@ -1,9 +1,9 @@
 import type { ScenarioId } from "./regions";
 
-/** Limites visuais — impede aparência de “simulador de resultado”. */
+/** Limites visuais — anel compacto, legível, sem “bola” enorme. */
 export const ILLUSTRATION = {
-  maxVolumeOpacity: 0.38,
-  maxRadiusFactor: 0.14,
+  maxVolumeOpacity: 0.42,
+  maxRadiusFactor: 0.055,
   watermark: "Demonstração · não é resultado",
   watermarkSub: "Vislumbre — conversa, não previsão",
 } as const;
@@ -13,9 +13,11 @@ type VolumeOpts = {
   intensity?: number;
   multiplier?: number;
   warn?: boolean;
+  /** Escala relativa à largura do rosto (px). */
+  faceWidthPx?: number;
 };
 
-/** Volume ilustrativo: halo suave + anel tracejado (não morph de pele). */
+/** Volume ilustrativo: halo curto + anel tracejado (não morph de pele). */
 export function drawIllustrativeVolume(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -27,31 +29,40 @@ export function drawIllustrativeVolume(
   const warn = opts.warn ?? false;
   const rgb = warn ? "154, 77, 46" : (opts.rgb ?? "47, 95, 88");
   const cap = ILLUSTRATION.maxVolumeOpacity;
+  const faceCap = opts.faceWidthPx
+    ? opts.faceWidthPx * 0.11
+    : ctx.canvas.width * ILLUSTRATION.maxRadiusFactor;
   const r = Math.min(
-    12 + intensity * multiplier * 32,
+    10 + intensity * multiplier * 22,
+    faceCap,
     ctx.canvas.width * ILLUSTRATION.maxRadiusFactor,
   );
 
   const g = ctx.createRadialGradient(x, y, 1, x, y, r);
-  g.addColorStop(0, `rgba(${rgb}, ${Math.min(cap, 0.22 + intensity * 0.18)})`);
-  g.addColorStop(0.55, `rgba(${rgb}, ${Math.min(cap * 0.5, 0.08)})`);
+  g.addColorStop(0, `rgba(${rgb}, ${Math.min(cap, 0.28 + intensity * 0.2)})`);
+  g.addColorStop(0.5, `rgba(${rgb}, ${Math.min(cap * 0.55, 0.12)})`);
   g.addColorStop(1, `rgba(${rgb}, 0)`);
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.strokeStyle = `rgba(${rgb}, ${warn ? 0.75 : 0.65})`;
-  ctx.lineWidth = 1.2;
-  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = `rgba(${rgb}, ${warn ? 0.85 : 0.8})`;
+  ctx.lineWidth = 1.6;
+  ctx.setLineDash([4, 3]);
   ctx.beginPath();
-  ctx.arc(x, y, r * 0.72, 0, Math.PI * 2);
+  ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.fillStyle = `rgba(${rgb}, 0.9)`;
+  // Halo claro atrás do ponto — legível em barba / sombra
   ctx.beginPath();
-  ctx.arc(x, y, 3, 0, Math.PI * 2);
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(250, 252, 251, 0.9)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${rgb}, 0.95)`;
   ctx.fill();
 }
 

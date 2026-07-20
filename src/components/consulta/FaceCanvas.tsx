@@ -107,12 +107,22 @@ export function FaceCanvas({
         });
       }
 
+      const faceWEstimate = (() => {
+        if (marks.length >= 2) {
+          const xs = marks.map((m) => m.x);
+          const span = (Math.max(...xs) - Math.min(...xs)) * canvas.width;
+          return Math.max(canvas.width * 0.28, span * 2.4);
+        }
+        return canvas.width * 0.38;
+      })();
+
       marks.forEach((mark) => {
         const x = mark.x * canvas.width;
         const y = mark.y * canvas.height;
         drawIllustrativeVolume(ctx, x, y, mark.intensity, mult, {
           rgb: REGION_COLOR[mark.region],
           warn: scenario === "nao_indicado",
+          faceWidthPx: faceWEstimate,
         });
       });
 

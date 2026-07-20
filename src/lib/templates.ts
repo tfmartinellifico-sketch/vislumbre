@@ -53,9 +53,9 @@ export const PROCEDURE_TEMPLATES: ProcedureTemplate[] = [
     label: "Contorno inferior",
     description: "Linha mandibular e mento — leitura de perfil e definição.",
     points: [
-      { region: "mandibula", x: 0.28, y: 0.62, intensity: 0.5 },
-      { region: "mandibula", x: 0.72, y: 0.62, intensity: 0.5 },
-      { region: "mento", x: 0.5, y: 0.72, intensity: 0.5 },
+      { region: "mandibula", x: 0.28, y: 0.62, intensity: 0.65 },
+      { region: "mandibula", x: 0.72, y: 0.62, intensity: 0.65 },
+      { region: "mento", x: 0.5, y: 0.72, intensity: 0.62 },
     ],
     suggestedNotes:
       "Contorno inferior discutido com cenários discreto e exagerado para calibrar desejo versus indicação.",
