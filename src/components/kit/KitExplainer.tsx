@@ -17,7 +17,7 @@ export function KitExplainer() {
       <header className="border-b border-ink/8 bg-paper/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-8">
           <Logo href="/" size="md" />
-          <Link href="/consulta" className="btn-primary !py-2.5 !px-4">
+          <Link href="/demo" className="btn-primary !py-2.5 !px-4">
             Abrir ferramenta
           </Link>
         </div>
@@ -129,7 +129,7 @@ export function KitExplainer() {
             ferramenta sozinha já fecha a consulta se o kit ainda não chegou.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/consulta" className="btn-primary">
+            <Link href="/demo" className="btn-primary">
               Abrir a ferramenta
             </Link>
             <Link href="/kit/fabricacao" className="btn-ghost">

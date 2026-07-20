@@ -12,6 +12,7 @@ function clinic(partial: Partial<Clinic>): Clinic {
     ownerId: null,
     status: "trial",
     plan: "trial",
+    environment: "client",
     seats: 3,
     trialEndsAt: trialEndDate(),
     notes: "",

@@ -43,7 +43,7 @@ export function LandingPage() {
             <Link href="/entrar" className="hidden hover:text-ink sm:inline">
               {c.nav.trial}
             </Link>
-            <Link href="/consulta" className="btn-primary !rounded-full !py-2.5 !px-5">
+            <Link href="/demo" className="btn-primary !rounded-full !py-2.5 !px-5">
               {c.nav.tool}
             </Link>
           </nav>
@@ -99,7 +99,7 @@ export function LandingPage() {
                 transition={{ delay: 0.4 }}
               >
                 <Link
-                  href="/consulta"
+                  href="/demo"
                   className="btn-primary !rounded-full !px-7 !py-3.5"
                 >
                   {c.hero.ctaPrimary}
@@ -173,7 +173,7 @@ export function LandingPage() {
                   {c.organizacao.tool.body}
                 </p>
                 <Link
-                  href="/consulta"
+                  href="/demo"
                   className="btn-primary mt-8 !rounded-full"
                 >
                   {c.organizacao.tool.cta}
@@ -267,7 +267,7 @@ export function LandingPage() {
               </p>
             </div>
             <Link
-              href="/consulta"
+              href="/demo"
               className="btn-primary !rounded-full !px-8 !py-4"
             >
               {c.ctaFinal.button}
@@ -280,7 +280,7 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <Logo href="/" size="sm" />
           <nav className="flex flex-wrap gap-6 text-[13px] text-ink-soft">
-            <Link href="/consulta" className="hover:text-ink">
+            <Link href="/demo" className="hover:text-ink">
               Demonstração
             </Link>
             <Link href="/kit" className="hover:text-ink">

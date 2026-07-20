@@ -54,18 +54,18 @@ service cloud.firestore {
         ])
         && request.resource.data.name is string
         && request.resource.data.email is string
-        && request.resource.data.status == 'novo';
+        && request.resource.data.status in ['novo', 'demo_solicitado'];
       allow read, update, delete: if isAdmin();
     }
 
     match /clinics/{clinicId} {
       allow read: if isAdmin() || isClinicMember(clinicId);
       allow create: if signedIn();
-      // Status / plano / assentos / Stripe: só admin (ou Admin SDK no webhook)
+      // Status / plano / assentos / ambiente / Stripe: só admin (ou Admin SDK no webhook)
       allow update: if isAdmin()
         || (isClinicOwnerOrAdmin(clinicId)
           && !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['status', 'plan', 'seats', 'stripeCustomerId', 'stripeSubscriptionId']));
+            .hasAny(['status', 'plan', 'seats', 'environment', 'stripeCustomerId', 'stripeSubscriptionId', 'leadId']));
       allow delete: if isAdmin();
 
       match /members/{memberId} {

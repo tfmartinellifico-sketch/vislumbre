@@ -2,8 +2,17 @@
 
 export type ClinicStatus = "trial" | "active" | "suspended" | "cancelled";
 export type PlanId = "trial" | "mensal" | "anual" | "piloto";
+export type ClinicEnvironment = "demo" | "client";
 export type MemberRole = "owner" | "admin" | "member";
-export type LeadStatus = "novo" | "contatado" | "piloto" | "cliente" | "descartado";
+export type LeadStatus =
+  | "novo"
+  | "contatado"
+  | "piloto"
+  | "cliente"
+  | "descartado"
+  | "demo_solicitado"
+  | "demo_liberado"
+  | "cliente_liberado";
 export type TicketStatus = "aberto" | "em_andamento" | "resolvido";
 
 export type Lead = {
@@ -12,11 +21,15 @@ export type Lead = {
   email: string;
   phone: string;
   clinic: string;
+  /** Empresa / clínica solicitante (alias de clinic na UI de demo). */
+  company?: string;
   city: string;
   message: string;
   status: LeadStatus;
   createdAt: string;
   source: string;
+  /** Clínica criada ao liberar demo/cliente. */
+  clinicId?: string | null;
 };
 
 export type Clinic = {
@@ -27,6 +40,8 @@ export type Clinic = {
   ownerId: string | null;
   status: ClinicStatus;
   plan: PlanId;
+  /** Ambiente de uso: demonstração ou cliente. */
+  environment: ClinicEnvironment;
   seats: number;
   trialEndsAt: string | null;
   notes: string;
@@ -34,6 +49,7 @@ export type Clinic = {
   updatedAt: string;
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
+  leadId?: string | null;
 };
 
 export type ClinicMember = {
@@ -104,6 +120,28 @@ export const STATUS_LABELS: Record<ClinicStatus, string> = {
   suspended: "Suspensa",
   cancelled: "Cancelada",
 };
+
+export const ENVIRONMENT_LABELS: Record<ClinicEnvironment, string> = {
+  demo: "Demonstração",
+  client: "Cliente",
+};
+
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  novo: "Novo",
+  contatado: "Contatado",
+  piloto: "Piloto",
+  cliente: "Cliente",
+  descartado: "Descartado",
+  demo_solicitado: "Demo solicitada",
+  demo_liberado: "Demo liberada",
+  cliente_liberado: "Cliente liberado",
+};
+
+export function normalizeClinicEnvironment(
+  value: unknown,
+): ClinicEnvironment {
+  return value === "demo" ? "demo" : "client";
+}
 
 export function trialEndDate(from = new Date(), days = 14) {
   const d = new Date(from);

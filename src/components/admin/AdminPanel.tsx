@@ -10,15 +10,20 @@ import {
   checkIsAdmin,
   createClinicAsAdmin,
   createMemberInvite,
+  liberateClientFromLead,
+  liberateDemoFromLead,
   listAllTickets,
   listClinics,
   listLeads,
   listUsage,
+  promoteClinicToClient,
   updateClinicStatus,
   updateLeadStatus,
   updateTicketStatus,
 } from "@/lib/platform";
 import {
+  ENVIRONMENT_LABELS,
+  LEAD_STATUS_LABELS,
   PLAN_LABELS,
   STATUS_LABELS,
   type Clinic,
@@ -249,7 +254,7 @@ export function AdminPanel() {
                         {lead.email} · {lead.phone || "sem telefone"}
                       </p>
                       <p className="text-[12px] text-ink-soft">
-                        {lead.clinic || "—"} · {lead.city || "—"}
+                        {lead.company || lead.clinic || "—"} · {lead.city || "—"}
                       </p>
                       {lead.message && (
                         <p className="mt-2 text-[13px] text-ink-soft">{lead.message}</p>
@@ -257,33 +262,116 @@ export function AdminPanel() {
                       <p className="mt-2 text-[11px] text-ink-soft/70">
                         {new Date(lead.createdAt).toLocaleString("pt-BR")} ·{" "}
                         {lead.source}
+                        {lead.clinicId ? ` · clínica ${lead.clinicId}` : ""}
                       </p>
                     </div>
-                    <select
-                      value={lead.status}
-                      onChange={async (e) => {
-                        await updateLeadStatus(lead.id, e.target.value as LeadStatus);
-                        await refresh();
-                      }}
-                      className="rounded-lg border border-ink/15 px-2 py-1.5 text-[12px]"
-                    >
-                      {(
-                        [
-                          "novo",
-                          "contatado",
-                          "piloto",
-                          "cliente",
-                          "descartado",
-                        ] as LeadStatus[]
-                      ).map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col items-end gap-2">
+                      <select
+                        value={lead.status}
+                        onChange={async (e) => {
+                          await updateLeadStatus(
+                            lead.id,
+                            e.target.value as LeadStatus,
+                          );
+                          await refresh();
+                        }}
+                        className="rounded-lg border border-ink/15 px-2 py-1.5 text-[12px]"
+                      >
+                        {(
+                          [
+                            "novo",
+                            "demo_solicitado",
+                            "demo_liberado",
+                            "contatado",
+                            "piloto",
+                            "cliente",
+                            "cliente_liberado",
+                            "descartado",
+                          ] as LeadStatus[]
+                        ).map((s) => (
+                          <option key={s} value={s}>
+                            {LEAD_STATUS_LABELS[s]}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            setBusy(true);
+                            setMsg("");
+                            try {
+                              const r = await liberateDemoFromLead(lead.id);
+                              const link = `${window.location.origin}/entrar?invite=${r.inviteId}`;
+                              setInviteLink(link);
+                              setMsg(
+                                r.reused
+                                  ? "Demo já vinculada — novo convite gerado."
+                                  : "Demo liberada. Convite enviado (se Resend) e link abaixo.",
+                              );
+                              await refresh();
+                            } catch (err) {
+                              setMsg(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Falha ao liberar demo.",
+                              );
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                          className="rounded-lg bg-sea/15 px-2.5 py-1.5 text-[11px] text-sea-deep"
+                        >
+                          Liberar demo
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            setBusy(true);
+                            setMsg("");
+                            try {
+                              const r = await liberateClientFromLead(
+                                lead.id,
+                                "mensal",
+                              );
+                              if (r.inviteId) {
+                                setInviteLink(
+                                  `${window.location.origin}/entrar?invite=${r.inviteId}`,
+                                );
+                              }
+                              setMsg(
+                                "Cliente liberado (ambiente client, status ativo).",
+                              );
+                              await refresh();
+                            } catch (err) {
+                              setMsg(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Falha ao liberar cliente.",
+                              );
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                          className="rounded-lg bg-ink px-2.5 py-1.5 text-[11px] text-paper"
+                        >
+                          Liberar cliente
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </article>
               ))}
+              {inviteLink && tab === "leads" && (
+                <div className="rounded-xl bg-fog px-3 py-3 text-[12px] break-all text-ink">
+                  <p className="font-medium">Link de convite</p>
+                  <a href={inviteLink} className="text-sea-deep underline">
+                    {inviteLink}
+                  </a>
+                </div>
+              )}
             </section>
           )}
 
@@ -301,6 +389,7 @@ export function AdminPanel() {
                         {c.ownerEmail} · {c.city} · {c.seats} assentos
                       </p>
                       <p className="text-[12px] text-ink-soft">
+                        {ENVIRONMENT_LABELS[c.environment ?? "client"]} ·{" "}
                         {STATUS_LABELS[c.status]} · {PLAN_LABELS[c.plan]}
                         {c.trialEndsAt
                           ? ` · trial até ${new Date(c.trialEndsAt).toLocaleDateString("pt-BR")}`
@@ -335,6 +424,19 @@ export function AdminPanel() {
                           {label}
                         </button>
                       ))}
+                      {c.environment !== "client" && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await promoteClinicToClient(c.id, "mensal");
+                            setMsg("Clínica promovida para cliente.");
+                            await refresh();
+                          }}
+                          className="rounded-lg bg-ink px-2.5 py-1 text-[11px] text-paper"
+                        >
+                          Virar cliente
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={async () => {

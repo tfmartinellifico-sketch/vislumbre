@@ -35,7 +35,7 @@ import {
   type RegionId,
   type ScenarioId,
 } from "@/lib/regions";
-import { STEPS_UI } from "@/lib/copy";
+import { STEPS_UI, canJumpToStep, canLeaveStep, type StepId } from "@/lib/copy";
 import { exportConsultaPdf } from "@/lib/exportPdf";
 import {
   createDemoFaceDataUrl,
@@ -70,7 +70,6 @@ import {
 import { APP_COPY } from "@/lib/app-copy";
 
 type ArDevice = "phone" | "glasses";
-type StepId = (typeof STEPS_UI)[number]["id"];
 type AccessGate = ToolAccessReason;
 
 export function ConsultaApp() {
@@ -116,6 +115,12 @@ export function ConsultaApp() {
 
   const stepIndex = STEPS_UI.findIndex((s) => s.id === step);
   const stepMeta = STEPS_UI[stepIndex];
+  const stepGateCtx = {
+    hasFrontImage: Boolean(imageUrl),
+    markCount: marks.length,
+  };
+  const canContinue = canLeaveStep(step, stepGateCtx);
+  const progressPct = Math.round(((stepIndex + 1) / STEPS_UI.length) * 100);
   const scenarioMeta = useMemo(
     () => SCENARIOS.find((s) => s.id === scenario),
     [scenario],
@@ -299,11 +304,20 @@ export function ConsultaApp() {
   }
 
   function goNext() {
+    if (!canLeaveStep(step, stepGateCtx)) return;
     setStep(STEPS_UI[Math.min(stepIndex + 1, STEPS_UI.length - 1)].id);
   }
 
   function goPrev() {
     setStep(STEPS_UI[Math.max(stepIndex - 1, 0)].id);
+  }
+
+  function tryJumpTo(targetId: StepId) {
+    const targetIndex = STEPS_UI.findIndex((s) => s.id === targetId);
+    if (targetIndex < 0) return;
+    if (targetIndex <= stepIndex || canJumpToStep(targetIndex, stepGateCtx)) {
+      setStep(targetId);
+    }
   }
 
   function toggleTopic(id: string) {
@@ -353,6 +367,15 @@ export function ConsultaApp() {
       if (e.key === "n" || e.key === "N") {
         setStep((current) => {
           const idx = STEPS_UI.findIndex((s) => s.id === current);
+          const currentId = STEPS_UI[idx].id;
+          if (
+            !canLeaveStep(currentId, {
+              hasFrontImage: Boolean(imageUrl),
+              markCount: marks.length,
+            })
+          ) {
+            return current;
+          }
           return STEPS_UI[Math.min(idx + 1, STEPS_UI.length - 1)].id;
         });
       }
@@ -369,7 +392,7 @@ export function ConsultaApp() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [imageUrl, step]);
+  }, [imageUrl, step, marks.length]);
 
   const planningInteractive = step === "marcar";
   const templateLabel =
@@ -488,6 +511,11 @@ export function ConsultaApp() {
               ← Site
             </Link>
             <Logo href="/consulta" size="sm" />
+            {clinicAccess?.environment === "demo" && (
+              <span className="hidden rounded-full border border-sand/50 bg-sand/20 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.14em] text-ink sm:inline">
+                Demonstração
+              </span>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
@@ -512,23 +540,41 @@ export function ConsultaApp() {
         </div>
 
         <div className="border-t border-ink/8">
+          <div className="mx-auto max-w-6xl px-4 pt-2 md:px-6">
+            <div className="h-1.5 overflow-hidden rounded-full bg-ink/8">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${stepMeta.tone.bar}`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[10px] uppercase tracking-[0.16em] text-ink-soft">
+              Etapa {stepIndex + 1} de {STEPS_UI.length} · {progressPct}%
+            </p>
+          </div>
           <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2.5 md:px-6">
-            {STEPS_UI.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setStep(s.id)}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] transition ${
-                  s.id === step
-                    ? "bg-sea-deep text-paper"
-                    : i < stepIndex
-                      ? "bg-sea/12 text-sea-deep"
-                      : "text-ink-soft hover:bg-fog"
-                }`}
-              >
-                <span className="opacity-60">{i + 1}</span> {s.label}
-              </button>
-            ))}
+            {STEPS_UI.map((s, i) => {
+              const reachable =
+                i <= stepIndex || canJumpToStep(i, stepGateCtx);
+              const active = s.id === step;
+              const done = i < stepIndex;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={!reachable}
+                  onClick={() => tryJumpTo(s.id)}
+                  className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-35 ${
+                    active
+                      ? s.tone.chip
+                      : done
+                        ? s.tone.soft
+                        : "text-ink-soft"
+                  }`}
+                >
+                  <span className="opacity-70">{i + 1}</span> {s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </header>
@@ -657,8 +703,8 @@ export function ConsultaApp() {
         </AnimatePresence>
 
         <aside className="space-y-5">
-          <div className="mb-1">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-sea">
+          <div className={`mb-1 rounded-xl border ${stepMeta.tone.border} bg-paper p-4`}>
+            <p className={`text-[11px] uppercase tracking-[0.2em] ${stepMeta.tone.accent}`}>
               Etapa {stepIndex + 1} de {STEPS_UI.length}
             </p>
             <h1 className="display mt-1 text-[1.75rem] leading-tight tracking-tight text-ink">
@@ -667,6 +713,17 @@ export function ConsultaApp() {
             <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
               {stepMeta.subtitle}
             </p>
+            <p className={`mt-4 rounded-lg px-3 py-2.5 text-[13px] font-medium leading-relaxed ${stepMeta.tone.soft}`}>
+              Agora: {stepMeta.coach}
+            </p>
+            <ul className="mt-3 space-y-1.5 text-[12px] text-ink-soft">
+              {stepMeta.checklist.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className={stepMeta.tone.accent}>·</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {step === "foto" && (
@@ -1144,8 +1201,7 @@ export function ConsultaApp() {
               type="button"
               onClick={goNext}
               disabled={
-                stepIndex === STEPS_UI.length - 1 ||
-                (step === "foto" && !imageUrl)
+                stepIndex === STEPS_UI.length - 1 || !canContinue
               }
               className="btn-primary flex-1 disabled:opacity-30"
             >

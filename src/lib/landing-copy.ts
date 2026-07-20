@@ -10,10 +10,10 @@ export const SITE_COPY = {
   hero: {
     lead:
       "O Vislumbre organiza a consulta em que se discutem possibilidades, limites e expectativas — com registro fotográfico, cenários de volume, visualização ao vivo e documento de apoio. Não simula resultado nem substitui o exame clínico.",
-    ctaPrimary: "Ver demonstração",
+    ctaPrimary: "Solicitar demonstração",
     ctaSecondary: "Como funciona o AR",
     bullets: [
-      "Conta clínica com trial e equipe",
+      "Acesso liberado pela equipe Vislumbre",
       "Imagens permanecem no aparelho",
       "PDF e histórico para documentação",
     ],
@@ -43,7 +43,7 @@ export const SITE_COPY = {
       title: "Ferramenta",
       body:
         "Fluxo completo na mesa: registro, análise por regiões, cenários, visualização ao vivo, apoio do kit e exportação do registro da sessão.",
-      cta: "Acessar demonstração",
+      cta: "Solicitar demonstração",
     },
   },
 
@@ -81,19 +81,19 @@ export const SITE_COPY = {
     eyebrow: "Contato comercial",
     title: "Solicitar piloto ou demonstração",
     body:
-      "Preencha o formulário. A equipe Vislumbre retorna para apresentar a solução, liberar trial ou configurar a clínica.",
+      "Preencha o formulário comercial abaixo ou use a página de demonstração. A equipe Vislumbre avalia o pedido e libera o acesso.",
     benefits: [
-      "Trial de 14 dias com conta e convites de equipe",
+      "Ambiente de demonstração sob liberação admin",
       "Painel da clínica: histórico, exportação e suporte",
       "Onboarding para o fluxo na consulta",
     ],
   },
 
   ctaFinal: {
-    title: "Conheça o fluxo na demonstração",
+    title: "Solicite o ambiente de demonstração",
     body:
-      "Acesse a ferramenta com face educativa e percorra registro, cenários, visualização ao vivo e exportação — sem cadastro obrigatório para teste inicial.",
-    button: "Abrir demonstração",
+      "Informe nome, e-mail e empresa. Após a liberação, você recebe o convite para entrar na ferramenta com face educativa e percorrer o fluxo completo.",
+    button: "Solicitar demonstração",
   },
 
   footer:
@@ -103,7 +103,7 @@ export const SITE_COPY = {
     proposta: "Solução",
     ar: "AR na consulta",
     status: "Disponibilidade",
-    trial: "Acesso clínica",
+    trial: "Área do cliente",
     tool: "Demonstração",
   },
 } as const;
@@ -145,7 +145,7 @@ export const AR_COPY = {
     "Predição do resultado clínico",
     "Substituto do exame físico",
   ],
-  cta: "Testar na demonstração",
+  cta: "Solicitar demonstração",
   diagramCaption: "Modo ao vivo · intensidade equilibrada · caráter ilustrativo",
   diagramFooter:
     "O sistema localiza o rosto, alinha as regiões marcadas e desenha volumes suaves — coerentes com a foto, em movimento.",
@@ -217,14 +217,43 @@ export const DIFERENCA_COPY = {
 } as const;
 
 export const ENTRAR_COPY = {
-  title: "Acesso da clínica",
+  title: "Área do cliente",
   inviteIntro: (clinic: string, email: string) =>
     `Convite para ${clinic}. Autentique-se com o e-mail ${email} para vincular sua conta.`,
   defaultIntro:
-    "Área de autenticação para profissionais e responsáveis pela clínica. Crie conta, inicie trial ou aceite convite da equipe.",
-  trialTitle: "Abrir clínica em trial (14 dias)",
-  trialButton: "Iniciar trial",
+    "Entrada para clínicas e profissionais com acesso já liberado. Se ainda não tem conta, solicite a demonstração ou aguarde o convite enviado pela equipe Vislumbre.",
   inviteButton: "Aceitar convite e vincular conta",
+  pendingTitle: "Aguardando liberação",
+  pendingBody:
+    "Sua conta está autenticada, mas ainda não há clínica vinculada. Solicite o ambiente de demonstração ou aceite o convite recebido por e-mail.",
+  pendingCta: "Solicitar demonstração",
+} as const;
+
+export const DEMO_COPY = {
+  eyebrow: "Ambiente de demonstração",
+  title: "Conheça o Vislumbre antes de contratar",
+  intro:
+    "O ambiente de demonstração é liberado sob demanda para clínicas e profissionais interessados. Você solicita o acesso; a equipe Vislumbre avalia e envia o convite por e-mail.",
+  points: [
+    "Acesso supervisionado à ferramenta de consulta (registro, cenários, ao vivo e exportação).",
+    "Não substitui a área do cliente: planos, equipe e billing ficam no painel após contratação.",
+    "Imagens de pacientes permanecem no aparelho; o ambiente demo usa faces educativas.",
+  ],
+  formTitle: "Solicitar acesso à demonstração",
+  formIntro:
+    "Informe nome, e-mail profissional e empresa. Após a liberação no painel admin, você recebe o convite para criar a senha.",
+  formSubmit: "Enviar solicitação",
+  formBusy: "Enviando…",
+  formErrorUnavailable: "Formulário indisponível no momento. Contate o suporte.",
+  formErrorSend: "Não foi possível enviar. Tente novamente.",
+  successTitle: "Solicitação recebida",
+  successBody:
+    "A equipe Vislumbre analisará o pedido e liberará o ambiente de demonstração. Você receberá um e-mail com o link de acesso.",
+  privacy: "Usamos estes dados apenas para liberar o acesso e contato comercial.",
+  form: {
+    errorUnavailable: "Formulário indisponível no momento. Contate o suporte.",
+    errorSend: "Não foi possível enviar. Tente novamente.",
+  },
 } as const;
 
 export const HERO_VISUAL = {

@@ -15,6 +15,7 @@ async function activateClinic(
   if (!db) return;
   await db.collection("clinics").doc(clinicId).update({
     status: "active",
+    environment: "client",
     plan: plan === "anual" ? "anual" : "mensal",
     trialEndsAt: null,
     stripeSubscriptionId: subscriptionId,

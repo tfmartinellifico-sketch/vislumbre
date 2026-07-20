@@ -6,11 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { Logo } from "@/components/brand/Logo";
 import { FirebaseAccount } from "@/components/clinica/FirebaseAccount";
-import {
-  acceptInvite,
-  createClinicOnSignup,
-  loadInvite,
-} from "@/lib/platform";
+import { acceptInvite, loadInvite, loadMyClinicId } from "@/lib/platform";
 import type { Invite } from "@/lib/platform-types";
 import { ENTRAR_COPY } from "@/lib/landing-copy";
 
@@ -21,10 +17,9 @@ function EntrarInner() {
   const [user, setUser] = useState<User | null>(null);
   const [invite, setInvite] = useState<Invite | null>(null);
   const [name, setName] = useState("");
-  const [clinicName, setClinicName] = useState("");
-  const [city, setCity] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [hasClinic, setHasClinic] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!inviteId) return;
@@ -32,6 +27,16 @@ function EntrarInner() {
       .then(setInvite)
       .catch(() => setInvite(null));
   }, [inviteId]);
+
+  useEffect(() => {
+    if (!user) {
+      setHasClinic(null);
+      return;
+    }
+    loadMyClinicId()
+      .then((id) => setHasClinic(Boolean(id)))
+      .catch(() => setHasClinic(false));
+  }, [user]);
 
   async function claimInvite() {
     if (!inviteId) return;
@@ -48,31 +53,13 @@ function EntrarInner() {
     }
   }
 
-  async function selfServeClinic() {
-    setBusy(true);
-    setMsg("");
-    try {
-      await createClinicOnSignup({
-        clinicName: clinicName || "Minha clínica",
-        city,
-        ownerName: name || "Profissional",
-      });
-      setMsg("Clínica criada em trial de 14 dias.");
-      router.push("/clinica");
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Falha ao criar clínica.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="grain atmosphere min-h-screen">
       <header className="border-b border-ink/8 bg-paper/90 px-5 py-4">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <Logo href="/" size="md" />
-          <Link href="/consulta" className="text-[13px] text-sea-deep">
-            Ferramenta
+          <Link href="/demo" className="text-[13px] text-sea-deep">
+            Solicitar demonstração
           </Link>
         </div>
       </header>
@@ -109,43 +96,27 @@ function EntrarInner() {
           </div>
         )}
 
-        {user && !invite && (
-          <div className="mt-8 space-y-3 rounded-2xl border border-ink/10 bg-paper p-5">
-            <p className="text-[13px] font-medium text-ink">
-              {ENTRAR_COPY.trialTitle}
-            </p>
-            <label className="block text-[12px] text-ink-soft">
-              Seu nome
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
-              />
-            </label>
-            <label className="block text-[12px] text-ink-soft">
-              Nome da clínica
-              <input
-                value={clinicName}
-                onChange={(e) => setClinicName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
-              />
-            </label>
-            <label className="block text-[12px] text-ink-soft">
-              Cidade
-              <input
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
-              />
-            </label>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={selfServeClinic}
-              className="btn-primary w-full disabled:opacity-40"
+        {user && !invite && hasClinic === true && (
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/clinica" className="btn-primary">
+              Abrir painel da clínica
+            </Link>
+            <Link
+              href="/consulta"
+              className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
             >
-              {ENTRAR_COPY.trialButton}
-            </button>
+              Abrir ferramenta
+            </Link>
+          </div>
+        )}
+
+        {user && !invite && hasClinic === false && (
+          <div className="mt-8 rounded-2xl border border-ink/10 bg-paper p-5 text-[14px] leading-relaxed text-ink-soft">
+            <p className="font-medium text-ink">{ENTRAR_COPY.pendingTitle}</p>
+            <p className="mt-2">{ENTRAR_COPY.pendingBody}</p>
+            <Link href="/demo" className="mt-4 inline-block text-sea-deep underline">
+              {ENTRAR_COPY.pendingCta}
+            </Link>
           </div>
         )}
 

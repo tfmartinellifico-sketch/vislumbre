@@ -54,8 +54,9 @@ export const APP_COPY = {
       { t: "Registro", d: "Captura frontal e, se necessário, perfil para discussão de projeção." },
       { t: "Análise", d: "Marcação de regiões ou aplicação de roteiro pré-definido." },
       { t: "Cenários", d: "Comparação entre intensidade conservadora, intermediária e exagerada." },
-      { t: "Ao vivo / Kit", d: "Visualização na câmera ou apoio tátil, conforme disponibilidade." },
-      { t: "Registro", d: "PDF e histórico com metadados e avisos legais." },
+      { t: "Ao vivo", d: "Sobreposição dos volumes na câmera, com caráter ilustrativo." },
+      { t: "Kit", d: "Apoio tátil opcional com as mesmas regiões da tela." },
+      { t: "Registro final", d: "PDF e histórico com metadados e avisos legais." },
     ],
     warn:
       "As ilustrações não devem ser apresentadas como garantia de resultado. O cenário exagerado documenta limites terapêuticos.",
@@ -77,20 +78,26 @@ export const APP_COPY = {
   },
 
   clinica: {
-    navAccount: "Acesso clínica",
+    navAccount: "Área do cliente",
     navTool: "Ferramenta",
     title: "Painel da clínica",
     intro:
       "Gestão de perfil profissional, histórico de sessões, exportação documental, equipe, plano contratado e suporte. Imagens faciais permanecem no dispositivo de origem.",
     access: "Autenticação",
     noAccount:
-      "Operação apenas local neste navegador.",
-    noAccountLink: "Solicitar trial ou aceitar convite",
+      "Entre com a conta liberada pela Vislumbre para acessar o painel e a ferramenta.",
+    noAccountLink: "Ir para área do cliente",
+    noAccountDemo: "Ainda não tem acesso? Solicite a demonstração",
+    demoBanner:
+      "Ambiente de demonstração — acesso supervisionado para avaliação da ferramenta.",
     plan: "Plano contratado",
     planSuspended:
       "Licença inativa ou trial encerrado. Regularize a assinatura ou contate o suporte.",
     noClinic: "Nenhuma clínica vinculada a esta conta.",
-    noClinicLink: "Abrir clínica em trial",
+    noClinicBody:
+      "Aguarde a liberação do admin ou aceite o convite recebido por e-mail.",
+    noClinicLink: "Solicitar demonstração",
+    openTool: "Abrir ferramenta",
     profile: "Profissional responsável",
     history: "Histórico de sessões",
     historyNote:

@@ -19,8 +19,10 @@ import { getFirebaseServices } from "./firebase";
 import { currentUser } from "./firebase-cloud";
 import {
   isAdminEmail,
+  normalizeClinicEnvironment,
   trialEndDate,
   type Clinic,
+  type ClinicEnvironment,
   type ClinicMember,
   type ClinicStatus,
   type Invite,
@@ -33,6 +35,27 @@ import {
   type UsageEvent,
 } from "./platform-types";
 import { canAcceptInvite, canInviteMember } from "./seats";
+
+function mapClinic(id: string, data: Record<string, unknown>): Clinic {
+  return {
+    id,
+    name: String(data.name ?? ""),
+    city: String(data.city ?? ""),
+    ownerEmail: String(data.ownerEmail ?? ""),
+    ownerId: (data.ownerId as string | null) ?? null,
+    status: data.status as ClinicStatus,
+    plan: data.plan as PlanId,
+    environment: normalizeClinicEnvironment(data.environment),
+    seats: Number(data.seats ?? 3),
+    trialEndsAt: (data.trialEndsAt as string | null) || null,
+    notes: String(data.notes ?? ""),
+    createdAt: String(data.createdAt ?? ""),
+    updatedAt: String(data.updatedAt ?? ""),
+    stripeCustomerId: (data.stripeCustomerId as string | null) ?? null,
+    stripeSubscriptionId: (data.stripeSubscriptionId as string | null) ?? null,
+    leadId: (data.leadId as string | null) ?? null,
+  };
+}
 
 function requireDb() {
   const { db, auth } = getFirebaseServices();
@@ -144,22 +167,30 @@ export async function checkIsAdmin(): Promise<boolean> {
 export async function submitLead(input: {
   name: string;
   email: string;
-  phone: string;
-  clinic: string;
-  city: string;
-  message: string;
+  phone?: string;
+  clinic?: string;
+  company?: string;
+  city?: string;
+  message?: string;
   source?: string;
+  /** Pedido de ambiente de demonstração. */
+  requestDemo?: boolean;
 }) {
   const { db } = requireDb();
+  const company = (input.company ?? input.clinic ?? "").trim();
+  const source = input.source ?? (input.requestDemo ? "demo" : "site");
+  const status: LeadStatus = input.requestDemo ? "demo_solicitado" : "novo";
   const ref = await addDoc(collection(db, "leads"), {
     name: input.name.trim(),
     email: input.email.trim().toLowerCase(),
-    phone: input.phone.trim(),
-    clinic: input.clinic.trim(),
-    city: input.city.trim(),
-    message: input.message.trim(),
-    status: "novo" as LeadStatus,
-    source: input.source ?? "site",
+    phone: (input.phone ?? "").trim(),
+    clinic: company,
+    company,
+    city: (input.city ?? "").trim(),
+    message: (input.message ?? "").trim(),
+    status,
+    source,
+    clinicId: null,
     createdAt: new Date().toISOString(),
   });
   await logUsage({
@@ -171,11 +202,11 @@ export async function submitLead(input: {
   void notifyLeadEmail({
     name: input.name.trim(),
     email: input.email.trim().toLowerCase(),
-    phone: input.phone.trim(),
-    clinic: input.clinic.trim(),
-    city: input.city.trim(),
-    message: input.message.trim(),
-    source: input.source ?? "site",
+    phone: (input.phone ?? "").trim(),
+    clinic: company,
+    city: (input.city ?? "").trim(),
+    message: (input.message ?? "").trim(),
+    source,
     leadId: ref.id,
   });
   return ref.id;
@@ -203,24 +234,33 @@ export async function createClinicAsAdmin(input: {
   plan?: PlanId;
   seats?: number;
   notes?: string;
+  environment?: ClinicEnvironment;
+  leadId?: string;
+  status?: ClinicStatus;
 }) {
   const user = currentUser();
   if (!user) throw new Error("Faça login como admin.");
   const { db } = requireDb();
   const now = new Date().toISOString();
+  const environment = input.environment ?? "client";
+  const status = input.status ?? (environment === "demo" ? "trial" : "trial");
+  const plan =
+    input.plan ?? (environment === "demo" ? "piloto" : "trial");
   const clinicRef = doc(collection(db, "clinics"));
   const clinic: Omit<Clinic, "id"> = {
     name: input.name.trim(),
     city: input.city.trim(),
     ownerEmail: input.ownerEmail.trim().toLowerCase(),
     ownerId: null,
-    status: "trial",
-    plan: input.plan ?? "trial",
-    seats: input.seats ?? 3,
-    trialEndsAt: trialEndDate(),
+    status,
+    plan,
+    environment,
+    seats: input.seats ?? (environment === "demo" ? 2 : 3),
+    trialEndsAt: status === "active" ? null : trialEndDate(),
     notes: input.notes?.trim() ?? "",
     createdAt: now,
     updatedAt: now,
+    leadId: input.leadId ?? null,
   };
   await setDoc(clinicRef, clinic);
 
@@ -250,7 +290,7 @@ export async function listClinics(): Promise<Clinic[]> {
   const snap = await getDocs(
     query(collection(db, "clinics"), orderBy("createdAt", "desc"), limit(200)),
   );
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Clinic, "id">) }));
+  return snap.docs.map((d) => mapClinic(d.id, d.data() as Record<string, unknown>));
 }
 
 export async function updateClinicStatus(
@@ -270,11 +310,115 @@ export async function updateClinicStatus(
   await updateDoc(doc(db, "clinics", clinicId), patch);
 }
 
+export async function promoteClinicToClient(
+  clinicId: string,
+  plan: PlanId = "mensal",
+) {
+  const { db } = requireDb();
+  await updateDoc(doc(db, "clinics", clinicId), {
+    environment: "client",
+    status: "active",
+    plan,
+    trialEndsAt: "",
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export async function liberateDemoFromLead(leadId: string) {
+  const user = currentUser();
+  if (!user) throw new Error("Faça login como admin.");
+  const { db } = requireDb();
+  const leadSnap = await getDoc(doc(db, "leads", leadId));
+  if (!leadSnap.exists()) throw new Error("Lead não encontrado.");
+  const lead = { id: leadSnap.id, ...(leadSnap.data() as Omit<Lead, "id">) };
+  if (!lead.email) throw new Error("Lead sem e-mail.");
+
+  if (lead.clinicId) {
+    const existing = await loadClinic(lead.clinicId);
+    if (existing) {
+      await updateDoc(doc(db, "leads", leadId), { status: "demo_liberado" });
+      const inviteId = await createMemberInvite({
+        clinicId: existing.id,
+        clinicName: existing.name,
+        email: lead.email,
+        role: "owner",
+        bypassSeatCheck: true,
+      });
+      return { clinicId: existing.id, inviteId, reused: true };
+    }
+  }
+
+  const company = (lead.company || lead.clinic || lead.name).trim() || "Demo";
+  const { clinicId, inviteId } = await createClinicAsAdmin({
+    name: company,
+    city: lead.city || "",
+    ownerEmail: lead.email,
+    plan: "piloto",
+    environment: "demo",
+    status: "trial",
+    seats: 2,
+    notes: `Demo liberada a partir do lead ${leadId}`,
+    leadId,
+  });
+  await updateDoc(doc(db, "leads", leadId), {
+    status: "demo_liberado",
+    clinicId,
+  });
+  return { clinicId, inviteId, reused: false };
+}
+
+export async function liberateClientFromLead(
+  leadId: string,
+  plan: PlanId = "mensal",
+) {
+  const user = currentUser();
+  if (!user) throw new Error("Faça login como admin.");
+  const { db } = requireDb();
+  const leadSnap = await getDoc(doc(db, "leads", leadId));
+  if (!leadSnap.exists()) throw new Error("Lead não encontrado.");
+  const lead = { id: leadSnap.id, ...(leadSnap.data() as Omit<Lead, "id">) };
+  if (!lead.email) throw new Error("Lead sem e-mail.");
+
+  if (lead.clinicId) {
+    await promoteClinicToClient(lead.clinicId, plan);
+    await updateDoc(doc(db, "leads", leadId), { status: "cliente_liberado" });
+    const clinic = await loadClinic(lead.clinicId);
+    const inviteId = clinic
+      ? await createMemberInvite({
+          clinicId: clinic.id,
+          clinicName: clinic.name,
+          email: lead.email,
+          role: "owner",
+          bypassSeatCheck: true,
+        })
+      : null;
+    return { clinicId: lead.clinicId, inviteId, reused: true };
+  }
+
+  const company = (lead.company || lead.clinic || lead.name).trim() || "Clínica";
+  const { clinicId, inviteId } = await createClinicAsAdmin({
+    name: company,
+    city: lead.city || "",
+    ownerEmail: lead.email,
+    plan,
+    environment: "client",
+    status: "active",
+    seats: 3,
+    notes: `Cliente liberado a partir do lead ${leadId}`,
+    leadId,
+  });
+  await updateDoc(doc(db, "leads", leadId), {
+    status: "cliente_liberado",
+    clinicId,
+  });
+  return { clinicId, inviteId, reused: false };
+}
+
 export async function loadClinic(clinicId: string): Promise<Clinic | null> {
   const { db } = requireDb();
   const snap = await getDoc(doc(db, "clinics", clinicId));
   if (!snap.exists()) return null;
-  return { id: snap.id, ...(snap.data() as Omit<Clinic, "id">) };
+  return mapClinic(snap.id, snap.data() as Record<string, unknown>);
 }
 
 export async function listClinicMembers(clinicId: string): Promise<ClinicMember[]> {
@@ -423,9 +567,10 @@ export async function createClinicOnSignup(input: {
     ownerId: user.uid,
     status: "trial",
     plan: "trial",
+    environment: "client",
     seats: 3,
     trialEndsAt: trialEndDate(),
-    notes: "Criada no cadastro",
+    notes: "Criada no cadastro (legado — preferir liberação admin)",
     createdAt: now,
     updatedAt: now,
   } satisfies Omit<Clinic, "id">);

@@ -39,7 +39,7 @@ export function DiferencaPage() {
       <header className="border-b border-ink/8 bg-paper/90 px-5 py-4 backdrop-blur-xl md:px-10">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Logo href="/" size="md" />
-          <Link href="/consulta" className="btn-primary !rounded-full !py-2 !px-4">
+          <Link href="/demo" className="btn-primary !rounded-full !py-2 !px-4">
             Demonstração
           </Link>
         </div>
@@ -126,7 +126,7 @@ export function DiferencaPage() {
             </ul>
 
             <div className="mt-14 flex flex-wrap gap-3">
-              <Link href="/consulta" className="btn-primary !rounded-full">
+              <Link href="/demo" className="btn-primary !rounded-full">
                 Acessar demonstração
               </Link>
               <Link href="/#contato" className="btn-ghost !rounded-full">

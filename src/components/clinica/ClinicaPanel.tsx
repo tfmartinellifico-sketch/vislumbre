@@ -36,6 +36,7 @@ import {
   logUsage,
 } from "@/lib/platform";
 import {
+  ENVIRONMENT_LABELS,
   isClinicAccessAllowed,
   PLAN_LABELS,
   STATUS_LABELS,
@@ -237,14 +238,29 @@ export function ClinicaPanel() {
             <Link href="/entrar" className="text-ink-soft hover:text-ink">
               {cp.navAccount}
             </Link>
-            <Link href="/consulta" className="btn-primary !py-2 !px-3.5">
-              {cp.navTool}
-            </Link>
+            {accessOk ? (
+              <Link href="/consulta" className="btn-primary !py-2 !px-3.5">
+                {cp.openTool}
+              </Link>
+            ) : (
+              <Link
+                href="/entrar"
+                className="rounded-full border border-ink/15 px-3.5 py-2 text-[13px]"
+              >
+                {cp.navAccount}
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-12 px-5 py-12 md:py-16">
+        {clinic?.environment === "demo" && (
+          <div className="rounded-xl border border-sand/40 bg-sand/15 px-4 py-3 text-[13px] text-ink">
+            {cp.demoBanner}
+          </div>
+        )}
+
         <section>
           <p className="eyebrow">Clínica</p>
           <h1 className="display mt-3 text-4xl tracking-tight md:text-5xl">
@@ -253,6 +269,11 @@ export function ClinicaPanel() {
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-ink-soft">
             {cp.intro}
           </p>
+          {accessOk && (
+            <Link href="/consulta" className="btn-primary mt-6 inline-flex">
+              {cp.openTool}
+            </Link>
+          )}
         </section>
 
         <section className="grid gap-6 md:grid-cols-2">
@@ -275,12 +296,19 @@ export function ClinicaPanel() {
               </button>
             )}
             {!user && (
-              <p className="mt-3 text-[13px] text-ink-soft">
-                {cp.noAccount}{" "}
-                <Link href="/entrar" className="text-sea-deep underline">
-                  {cp.noAccountLink}
-                </Link>
-              </p>
+              <div className="mt-3 space-y-2 text-[13px] text-ink-soft">
+                <p>
+                  {cp.noAccount}{" "}
+                  <Link href="/entrar" className="text-sea-deep underline">
+                    {cp.noAccountLink}
+                  </Link>
+                </p>
+                <p>
+                  <Link href="/demo" className="text-sea-deep underline">
+                    {cp.noAccountDemo}
+                  </Link>
+                </p>
+              </div>
             )}
           </div>
 
@@ -290,6 +318,7 @@ export function ClinicaPanel() {
               <div className="mt-4 rounded-xl border border-ink/10 bg-paper p-4 text-[13px]">
                 <p className="font-medium text-ink">{clinic.name}</p>
                 <p className="mt-1 text-ink-soft">
+                  {ENVIRONMENT_LABELS[clinic.environment ?? "client"]} ·{" "}
                   {STATUS_LABELS[clinic.status]} · {PLAN_LABELS[clinic.plan]}
                 </p>
                 {clinic.trialEndsAt && clinic.status === "trial" && (
@@ -301,34 +330,46 @@ export function ClinicaPanel() {
                 {!accessOk && (
                   <p className="mt-3 text-warn">{cp.planSuspended}</p>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={billingBusy || !user}
-                    onClick={() => startCheckout("mensal")}
-                    className="rounded-lg bg-sea-deep px-3 py-2 text-[12px] text-paper disabled:opacity-40"
-                  >
-                    Assinar mensal
-                  </button>
-                  <button
-                    type="button"
-                    disabled={billingBusy || !user}
-                    onClick={() => startCheckout("anual")}
-                    className="rounded-lg border border-sea/40 px-3 py-2 text-[12px] text-sea-deep disabled:opacity-40"
-                  >
-                    Assinar anual
-                  </button>
-                </div>
-                <p className="mt-3 text-[11px] text-ink-soft">
-                  Checkout Stripe (quando configurado). Sem chaves, o admin
-                  ainda pode ativar manualmente.
-                </p>
+                {clinic.environment === "client" && (
+                  <>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={billingBusy || !user}
+                        onClick={() => startCheckout("mensal")}
+                        className="rounded-lg bg-sea-deep px-3 py-2 text-[12px] text-paper disabled:opacity-40"
+                      >
+                        Assinar mensal
+                      </button>
+                      <button
+                        type="button"
+                        disabled={billingBusy || !user}
+                        onClick={() => startCheckout("anual")}
+                        className="rounded-lg border border-sea/40 px-3 py-2 text-[12px] text-sea-deep disabled:opacity-40"
+                      >
+                        Assinar anual
+                      </button>
+                    </div>
+                    <p className="mt-3 text-[11px] text-ink-soft">
+                      Checkout Stripe (quando configurado). Sem chaves, o admin
+                      ainda pode ativar manualmente.
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : user ? (
+              <div className="mt-4 rounded-xl border border-ink/10 bg-paper p-4 text-[13px] text-ink-soft">
+                <p className="font-medium text-ink">{cp.noClinic}</p>
+                <p className="mt-2">{cp.noClinicBody}</p>
+                <Link href="/demo" className="mt-3 inline-block text-sea-deep underline">
+                  {cp.noClinicLink}
+                </Link>
               </div>
             ) : (
               <p className="mt-4 text-[13px] text-ink-soft">
-                {cp.noClinic}{" "}
+                {cp.noAccount}{" "}
                 <Link href="/entrar" className="text-sea-deep underline">
-                  {cp.noClinicLink}
+                  {cp.noAccountLink}
                 </Link>
               </p>
             )}

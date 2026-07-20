@@ -80,7 +80,7 @@ export function ArSection() {
         </div>
 
         <Link
-          href="/consulta"
+          href="/demo"
           className="btn-primary mt-10 inline-flex !bg-paper !text-ink hover:!bg-mist"
         >
           {c.cta}
