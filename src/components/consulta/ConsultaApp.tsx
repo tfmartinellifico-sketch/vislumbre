@@ -591,6 +591,7 @@ export function ConsultaApp() {
             <div className="space-y-3">
               {show3d && faceLandmarks ? (
                 <FaceMesh3D
+                  imageUrl={imageUrl}
                   faceLandmarks={faceLandmarks}
                   marks={marks}
                   scenario={scenario}
@@ -645,6 +646,7 @@ export function ConsultaApp() {
             <div className="space-y-3">
               {faceLandmarks?.length ? (
                 <FaceMesh3D
+                  imageUrl={imageUrl}
                   faceLandmarks={faceLandmarks}
                   marks={marks}
                   scenario={scenario}

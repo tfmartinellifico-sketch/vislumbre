@@ -5,9 +5,12 @@ import {
 } from "./faceLandmarks";
 import type { Mark } from "./regions";
 
+export type MeshConnection = { start: number; end: number };
+
 /** Converte landmark MediaPipe (0–1, y↓) para espaço Three.js centrado. */
 export function landmarksToCentered(face: LandmarkPoint[]): {
   positions: Float32Array;
+  uvs: Float32Array;
   scale: number;
 } {
   const tip = face[1] ?? face[4];
@@ -20,21 +23,61 @@ export function landmarksToCentered(face: LandmarkPoint[]): {
     left && right
       ? Math.hypot(left.x - right.x, left.y - right.y) || 0.2
       : 0.2;
-  const scale = 1.6 / iod;
+  const scale = 1.55 / iod;
 
   const positions = new Float32Array(face.length * 3);
+  const uvs = new Float32Array(face.length * 2);
   for (let i = 0; i < face.length; i++) {
     const p = face[i];
     if (!p) continue;
     positions[i * 3] = (p.x - cx) * scale;
     positions[i * 3 + 1] = -(p.y - cy) * scale;
-    positions[i * 3 + 2] = -((p.z ?? 0) - cz) * scale * 0.85;
+    positions[i * 3 + 2] = -((p.z ?? 0) - cz) * scale * 1.15;
+    uvs[i * 2] = p.x;
+    uvs[i * 2 + 1] = 1 - p.y;
   }
 
-  return { positions, scale };
+  return { positions, uvs, scale };
 }
 
-/** Posição 3D de uma marca: landmark anatômico mais próximo da âncora 2D. */
+/**
+ * A tessellation do MediaPipe é lista de arestas.
+ * Recupera triângulos = ciclos de 3 no grafo.
+ */
+export function trianglesFromConnections(
+  connections: MeshConnection[],
+  vertexCount: number,
+): Uint32Array {
+  const adj: Set<number>[] = Array.from(
+    { length: vertexCount },
+    () => new Set(),
+  );
+  for (const { start, end } of connections) {
+    if (start >= vertexCount || end >= vertexCount) continue;
+    adj[start].add(end);
+    adj[end].add(start);
+  }
+
+  const seen = new Set<string>();
+  const tris: number[] = [];
+  for (let a = 0; a < vertexCount; a++) {
+    const neigh = [...adj[a]];
+    for (let i = 0; i < neigh.length; i++) {
+      for (let j = i + 1; j < neigh.length; j++) {
+        const b = neigh[i];
+        const c = neigh[j];
+        if (!adj[b].has(c)) continue;
+        const key = [a, b, c].sort((x, y) => x - y).join("-");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        // Orientação aproximada (anti-horário em XY)
+        tris.push(a, b, c);
+      }
+    }
+  }
+  return new Uint32Array(tris);
+}
+
 export function markToVec3(
   mark: Mark,
   face: LandmarkPoint[],
@@ -60,6 +103,6 @@ export function markToVec3(
   return [
     positions[best * 3],
     positions[best * 3 + 1],
-    positions[best * 3 + 2] + 0.045,
+    positions[best * 3 + 2] + 0.05,
   ];
 }

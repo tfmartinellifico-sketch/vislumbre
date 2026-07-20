@@ -176,6 +176,7 @@ export function PresentMode({
           ) : faceLandmarks?.length ? (
             <div className="mx-auto max-w-2xl">
               <FaceMesh3D
+                imageUrl={imageUrl}
                 faceLandmarks={faceLandmarks}
                 marks={marks}
                 scenario={scenario}
