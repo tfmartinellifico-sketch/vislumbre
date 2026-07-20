@@ -59,14 +59,19 @@ import {
   saveConsulta,
   type SavedConsulta,
 } from "@/lib/storage";
-import { currentUser, saveCloudConsulta } from "@/lib/firebase-cloud";
+import { currentUser, observeUser, saveCloudConsulta } from "@/lib/firebase-cloud";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { loadClinic, loadMyClinicId, logUsage } from "@/lib/platform";
-import { isClinicAccessAllowed, type Clinic } from "@/lib/platform-types";
+import {
+  resolveToolAccess,
+  type Clinic,
+  type ToolAccessReason,
+} from "@/lib/platform-types";
 import { APP_COPY } from "@/lib/app-copy";
 
 type ArDevice = "phone" | "glasses";
 type StepId = (typeof STEPS_UI)[number]["id"];
-type AccessGate = "loading" | "ok" | "blocked";
+type AccessGate = ToolAccessReason;
 
 export function ConsultaApp() {
   const [step, setStep] = useState<StepId>("foto");
@@ -166,23 +171,43 @@ export function ConsultaApp() {
         if (reopened.photoProfileDataUrl) setProfileUrl(reopened.photoProfileDataUrl);
         setStep(reopened.marks.length ? "marcar" : "foto");
       }
-
-      void (async () => {
-        try {
-          const id = await loadMyClinicId();
-          if (id) {
-            const c = await loadClinic(id);
-            setClinicAccess(c);
-            setAccessGate(isClinicAccessAllowed(c) ? "ok" : "blocked");
-          } else {
-            setAccessGate("ok");
-          }
-        } catch {
-          setAccessGate("ok");
-        }
-      })();
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured) {
+      setAccessGate("unavailable");
+      return;
+    }
+
+    return observeUser((user) => {
+      void (async () => {
+        if (!user) {
+          setClinicAccess(null);
+          setAccessGate("no_auth");
+          return;
+        }
+        try {
+          const id = await loadMyClinicId();
+          if (!id) {
+            setClinicAccess(null);
+            setAccessGate("no_clinic");
+            return;
+          }
+          const c = await loadClinic(id);
+          setClinicAccess(c);
+          const reason = resolveToolAccess({
+            firebaseConfigured: true,
+            userId: user.uid,
+            clinic: c,
+          });
+          setAccessGate(reason === "ok" ? "ok" : reason);
+        } catch {
+          setAccessGate("unavailable");
+        }
+      })();
+    });
   }, []);
 
   function onFile(file: File | null, target: "front" | "profile" = "front") {
@@ -358,15 +383,25 @@ export function ConsultaApp() {
     );
   }
 
-  if (accessGate === "blocked") {
+  if (accessGate !== "ok") {
+    const blocked = APP_COPY.tool.blocked;
+    const copy =
+      accessGate === "no_auth"
+        ? blocked.noAuth
+        : accessGate === "no_clinic"
+          ? blocked.noClinic
+          : accessGate === "unavailable"
+            ? blocked.unavailable
+            : blocked.license;
+
     return (
       <div className="grain atmosphere flex min-h-screen flex-col items-center justify-center px-5 text-center">
         <Logo href="/" size="md" />
-        <h1 className="display mt-8 text-3xl text-ink">{APP_COPY.tool.blocked.title}</h1>
+        <h1 className="display mt-8 text-3xl text-ink">{copy.title}</h1>
         <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
-          {APP_COPY.tool.blocked.body}
+          {copy.body}
         </p>
-        {clinicAccess && (
+        {accessGate === "license" && clinicAccess && (
           <p className="mt-2 text-[13px] text-ink-soft">
             {clinicAccess.name} · {clinicAccess.status}
             {clinicAccess.trialEndsAt
@@ -375,11 +410,42 @@ export function ConsultaApp() {
           </p>
         )}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/clinica" className="btn-primary">
-            {APP_COPY.tool.blocked.plan}
-          </Link>
-          <Link href="/#contato" className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]">
-            {APP_COPY.tool.blocked.contact}
+          {accessGate === "no_auth" && (
+            <Link href="/entrar" className="btn-primary">
+              {blocked.noAuth.cta}
+            </Link>
+          )}
+          {accessGate === "no_clinic" && (
+            <Link href="/entrar" className="btn-primary">
+              {blocked.noClinic.cta}
+            </Link>
+          )}
+          {accessGate === "license" && (
+            <>
+              <Link href="/clinica" className="btn-primary">
+                {blocked.license.plan}
+              </Link>
+              <Link
+                href="/#contato"
+                className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+              >
+                {blocked.license.contact}
+              </Link>
+            </>
+          )}
+          {accessGate === "unavailable" && (
+            <Link
+              href="/#contato"
+              className="btn-primary"
+            >
+              {blocked.unavailable.contact}
+            </Link>
+          )}
+          <Link
+            href="/"
+            className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+          >
+            Voltar ao site
           </Link>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canAcceptInvite, canInviteMember } from "./seats";
-import { isClinicAccessAllowed, trialEndDate, type Clinic } from "./platform-types";
+import { isClinicAccessAllowed, resolveToolAccess, trialEndDate, type Clinic } from "./platform-types";
 import { computePilotMetrics } from "./metrics";
 
 function clinic(partial: Partial<Clinic>): Clinic {
@@ -50,6 +50,10 @@ describe("seats", () => {
 });
 
 describe("isClinicAccessAllowed", () => {
+  it("bloqueia sem clínica", () => {
+    expect(isClinicAccessAllowed(null)).toBe(false);
+  });
+
   it("bloqueia suspensa", () => {
     expect(isClinicAccessAllowed(clinic({ status: "suspended" }))).toBe(false);
   });
@@ -69,6 +73,48 @@ describe("isClinicAccessAllowed", () => {
     expect(isClinicAccessAllowed(clinic({ status: "active", trialEndsAt: null }))).toBe(
       true,
     );
+  });
+});
+
+describe("resolveToolAccess", () => {
+  it("exige login", () => {
+    expect(
+      resolveToolAccess({
+        firebaseConfigured: true,
+        userId: null,
+        clinic: clinic({}),
+      }),
+    ).toBe("no_auth");
+  });
+
+  it("exige clínica vinculada", () => {
+    expect(
+      resolveToolAccess({
+        firebaseConfigured: true,
+        userId: "u1",
+        clinic: null,
+      }),
+    ).toBe("no_clinic");
+  });
+
+  it("bloqueia licença inválida", () => {
+    expect(
+      resolveToolAccess({
+        firebaseConfigured: true,
+        userId: "u1",
+        clinic: clinic({ status: "suspended" }),
+      }),
+    ).toBe("license");
+  });
+
+  it("libera com clínica ativa", () => {
+    expect(
+      resolveToolAccess({
+        firebaseConfigured: true,
+        userId: "u1",
+        clinic: clinic({ status: "active", trialEndsAt: null }),
+      }),
+    ).toBe("ok");
   });
 });
 

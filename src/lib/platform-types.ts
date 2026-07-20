@@ -111,13 +111,34 @@ export function trialEndDate(from = new Date(), days = 14) {
   return d.toISOString();
 }
 
+/** Licença da clínica permite uso da ferramenta. Sem clínica = sem acesso. */
 export function isClinicAccessAllowed(clinic: Clinic | null) {
-  if (!clinic) return true; // uso local sem clínica
+  if (!clinic) return false;
   if (clinic.status === "suspended" || clinic.status === "cancelled") return false;
   if (clinic.status === "trial" && clinic.trialEndsAt) {
     return new Date(clinic.trialEndsAt).getTime() > Date.now();
   }
   return clinic.status === "active" || clinic.status === "trial";
+}
+
+export type ToolAccessReason =
+  | "ok"
+  | "loading"
+  | "no_auth"
+  | "no_clinic"
+  | "license"
+  | "unavailable";
+
+/** Resolve se o profissional pode abrir a ferramenta. */
+export function resolveToolAccess(input: {
+  firebaseConfigured: boolean;
+  userId: string | null;
+  clinic: Clinic | null;
+}): ToolAccessReason {
+  if (!input.firebaseConfigured) return "unavailable";
+  if (!input.userId) return "no_auth";
+  if (!input.clinic) return "no_clinic";
+  return isClinicAccessAllowed(input.clinic) ? "ok" : "license";
 }
 
 export function adminEmailsFromEnv() {

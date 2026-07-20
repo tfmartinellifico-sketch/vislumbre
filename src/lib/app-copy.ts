@@ -3,12 +3,32 @@
 export const APP_COPY = {
   tool: {
     blocked: {
-      loading: "Verificando licença da clínica…",
-      title: "Licença inativa",
-      body:
-        "O acesso desta clínica está suspenso ou o período de trial encheu. A ferramenta permanece indisponível até reativação do plano.",
-      plan: "Gerenciar plano",
-      contact: "Contato comercial",
+      loading: "Verificando acesso…",
+      noAuth: {
+        title: "Acesso restrito a clínicas",
+        body:
+          "A ferramenta Vislumbre é exclusiva para profissionais com conta e clínica ativa. Entre ou solicite trial para continuar.",
+        cta: "Entrar ou solicitar trial",
+      },
+      noClinic: {
+        title: "Clínica não vinculada",
+        body:
+          "Sua conta está autenticada, mas ainda não há clínica associada. Abra um trial ou aceite um convite da equipe.",
+        cta: "Configurar clínica",
+      },
+      license: {
+        title: "Licença inativa",
+        body:
+          "O acesso desta clínica está suspenso ou o período de trial encerrou. A ferramenta permanece indisponível até reativação do plano.",
+        plan: "Gerenciar plano",
+        contact: "Contato comercial",
+      },
+      unavailable: {
+        title: "Acesso indisponível",
+        body:
+          "Não foi possível validar a licença no momento. Tente novamente ou contate o suporte.",
+        contact: "Contato comercial",
+      },
     },
     presentMode: "Modo apresentação",
     resetSession: "Nova sessão",
