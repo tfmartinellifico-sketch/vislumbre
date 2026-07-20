@@ -228,6 +228,6 @@ export const ENTRAR_COPY = {
 } as const;
 
 export const HERO_VISUAL = {
-  caption: "Diagrama de consulta · perfil ¾",
-  note: "Volumes e eixos de análise — linguagem ilustrativa, não resultado clínico.",
+  caption: "Anotação de consulta · perfil",
+  note: "Regiões e marcações em linguagem ilustrativa — não é resultado clínico.",
 } as const;

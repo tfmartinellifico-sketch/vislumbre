@@ -196,9 +196,13 @@ export function ConsultaApp() {
     reader.readAsDataURL(file);
   }
 
-  function loadDemo() {
-    setImageUrl(createDemoFaceDataUrl());
-    setProfileUrl(createDemoProfileDataUrl());
+  async function loadDemo() {
+    const [front, profile] = await Promise.all([
+      createDemoFaceDataUrl(),
+      createDemoProfileDataUrl(),
+    ]);
+    setImageUrl(front);
+    setProfileUrl(profile);
     setPatientLabel((v) => v || "DEMO");
   }
 
