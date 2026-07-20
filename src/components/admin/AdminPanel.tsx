@@ -338,7 +338,7 @@ export function AdminPanel() {
                               setBusy(false);
                             }
                           }}
-                          className="rounded-lg bg-sea/15 px-2.5 py-1.5 text-[11px] text-sea-deep"
+                          className="inline-flex items-center justify-center rounded-full border border-sea-deep/30 bg-sea-deep px-4 py-2 text-[13px] font-medium text-paper shadow-sm transition hover:bg-sea disabled:opacity-40"
                         >
                           Liberar demo
                         </button>
@@ -372,7 +372,7 @@ export function AdminPanel() {
                               setBusy(false);
                             }
                           }}
-                          className="rounded-lg bg-ink px-2.5 py-1.5 text-[11px] text-paper"
+                          className="inline-flex items-center justify-center rounded-full border border-ink/20 bg-paper px-4 py-2 text-[13px] font-medium text-ink shadow-sm transition hover:border-ink/40 hover:bg-fog disabled:opacity-40"
                         >
                           Liberar cliente
                         </button>
