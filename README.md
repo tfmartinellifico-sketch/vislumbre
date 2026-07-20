@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vislumbre
 
-## Getting Started
+**Clareza antes da decisão.**
 
-First, run the development server:
+Ferramenta de consulta para estética facial: demonstração visual e alinhamento de expectativa — **sem predição clínica** e **sem simular injeção**.
+
+## Stack
+
+- Next.js (App Router) + TypeScript + Tailwind CSS 4  
+- Framer Motion · jsPDF · Three.js (WebXR / óculos)
+- Firebase Authentication + Firestore (opcional, fallback local)
+
+## Como rodar
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Rota | O quê |
+|------|--------|
+| `/` | Site |
+| `/consulta` | Ferramenta: captura guiada, cenários, AR, PDF |
+| `/diferenca` | Por que não é simulador (Sophia / iFace) |
+| `/marca` | Comparar tipografias do logo |
+| `/kit` · `/kit/fabricacao` | Kit físico + roteiro de produção |
+| `/clinica` | Perfil + histórico (conta opcional) |
+| `/termos` · `/privacidade` | Rascunhos jurídicos |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Posicionamento técnico
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O Vislumbre **não prevê resultado** porque:
 
-## Learn More
+- Volumes são **ilustrativos** (halo tracejado, opacidade limitada) — não morph de pele
+- Marca d’água em tela, cenários, AR e PDF
+- Sem produto, dose, agulha ou camadas de tecido
+- Cenário “exagerado” explícito como o que se evita
 
-To learn more about Next.js, take a look at the following resources:
+Ver `/diferenca` e `docs/claims-permitidos.md`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Publicar (Vercel)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Passo a passo: `docs/deploy-vercel.md` · config em `vercel.json`.
 
-## Deploy on Vercel
+## Docs
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `docs/claims-permitidos.md`  
+- `docs/kit-fisico-v1.md`  
+- `docs/deploy-vercel.md`  
+- `docs/firebase-setup.md`  
+- `docs/oculos-ar.md`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Aviso
+
+Não é dispositivo médico de predição. Validar claims com assessoria jurídica antes de comercializar.

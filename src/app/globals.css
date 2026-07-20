@@ -1,26 +1,234 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0e1615;
+  --ink-soft: #3a4a47;
+  --mist: #e7efec;
+  --fog: #f4f8f6;
+  --paper: #fafcfb;
+  --sea: #245750;
+  --sea-deep: #143833;
+  --sea-soft: #6b9a90;
+  --sand: #cbb89a;
+  --sand-deep: #a8906e;
+  --warn: #8f4528;
+  --line: rgba(14, 22, 21, 0.1);
+  --surface: rgba(255, 255, 255, 0.72);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-mist: var(--mist);
+  --color-fog: var(--fog);
+  --color-paper: var(--paper);
+  --color-sea: var(--sea);
+  --color-sea-deep: var(--sea-deep);
+  --color-sea-soft: var(--sea-soft);
+  --color-sand: var(--sand);
+  --color-sand-deep: var(--sand-deep);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-logo-cormorant);
+  --font-logo-cormorant: var(--font-logo-cormorant);
+  --font-logo-instrument: var(--font-logo-instrument);
+  --font-logo-dm: var(--font-logo-dm);
+  --font-logo-fraunces: var(--font-logo-fraunces);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.font-logo-cormorant {
+  font-family: var(--font-logo-cormorant), Georgia, serif;
+}
+
+.font-logo-instrument {
+  font-family: var(--font-logo-instrument), Georgia, serif;
+}
+
+.font-logo-dm {
+  font-family: var(--font-logo-dm), Georgia, serif;
+}
+
+.font-logo-fraunces {
+  font-family: var(--font-logo-fraunces), Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sea) 32%, white);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.display {
+  font-family: var(--font-logo-cormorant), Georgia, "Times New Roman", serif;
+  font-weight: 600;
+}
+
+.atmosphere {
+  background:
+    radial-gradient(110% 75% at 8% 0%, rgba(107, 154, 144, 0.22), transparent 52%),
+    radial-gradient(80% 55% at 100% 10%, rgba(203, 184, 154, 0.28), transparent 48%),
+    linear-gradient(168deg, #f3f7f5 0%, #fafcfb 40%, #e8f0ed 100%);
+}
+
+.atmosphere-dense {
+  background:
+    radial-gradient(90% 70% at 70% -10%, rgba(36, 87, 80, 0.14), transparent 55%),
+    radial-gradient(70% 50% at 0% 100%, rgba(203, 184, 154, 0.22), transparent 45%),
+    linear-gradient(180deg, #e4ece9 0%, #f4f8f6 100%);
+}
+
+.grain {
+  position: relative;
+}
+
+.grain::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px -36px rgba(14, 22, 21, 0.35);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(165deg, var(--sea-deep) 0%, #1a4540 100%);
+  color: var(--paper);
+  padding: 0.8rem 1.35rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 20px -6px rgba(20, 56, 51, 0.45);
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(165deg, var(--sea) 0%, var(--sea-deep) 100%);
+  box-shadow: 0 8px 28px -8px rgba(20, 56, 51, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink-soft);
+  padding: 0.8rem 1.35rem;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost:hover {
+  border-color: rgba(14, 22, 21, 0.22);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--sea);
+}
+
+.section-pad {
+  padding: 5.5rem 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .section-pad {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+}
+
+.card-dark {
+  border-radius: 1rem;
+  border: 1px solid rgba(250, 252, 251, 0.1);
+  background: rgba(250, 252, 251, 0.04);
+  padding: 2rem;
+}
+
+@media (min-width: 768px) {
+  .card-dark {
+    padding: 2.5rem;
+  }
+}
+
+.step-card {
+  border-top: 1px solid rgba(14, 22, 21, 0.12);
+  padding-top: 1.75rem;
+  padding-bottom: 0.5rem;
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 420;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.contour-draw {
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  animation: draw-line 2.6s ease forwards 0.35s;
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-soft {
+  animation: float-soft 8s ease-in-out infinite;
 }
