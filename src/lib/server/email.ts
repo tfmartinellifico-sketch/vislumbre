@@ -61,29 +61,50 @@ export async function sendInviteEmail(input: {
   clinicName: string;
   inviteUrl: string;
   role: string;
+  environment?: "demo" | "client";
 }) {
   const resend = resendClient();
   if (!resend) {
     return { sent: false as const, reason: "RESEND_API_KEY ausente" };
   }
+  const isDemo = input.environment === "demo";
   await resend.emails.send({
     from: emailFrom(),
     to: input.to,
-    subject: `Seu acesso ao Vislumbre — ${input.clinicName}`,
-    text: [
-      `Olá,`,
-      ``,
-      `Seu acesso à clínica ${input.clinicName} no Vislumbre está liberado.`,
-      ``,
-      `1. Abra o link abaixo`,
-      `2. Crie sua senha (ou entre, se já tiver conta) com este e-mail`,
-      `3. Aceite o convite na tela`,
-      `4. Use a ferramenta em ${publicAppUrl()}/consulta e o painel em ${publicAppUrl()}/clinica`,
-      ``,
-      input.inviteUrl,
-      ``,
-      `Se não solicitou este acesso, ignore este e-mail.`,
-    ].join("\n"),
+    subject: isDemo
+      ? `Sua demonstração Vislumbre — ${input.clinicName}`
+      : `Seu acesso ao Vislumbre — ${input.clinicName}`,
+    text: isDemo
+      ? [
+          `Olá,`,
+          ``,
+          `Sua demonstração do Vislumbre para ${input.clinicName} está liberada.`,
+          ``,
+          `1. Abra o link abaixo`,
+          `2. Crie sua senha (ou entre, se já tiver conta) com este e-mail`,
+          `3. Aceite o convite na tela`,
+          `4. Use a ferramenta de demonstração em ${publicAppUrl()}/consulta`,
+          ``,
+          `Este acesso é apenas para avaliação da ferramenta — não inclui o painel completo da clínica.`,
+          ``,
+          input.inviteUrl,
+          ``,
+          `Se não solicitou este acesso, ignore este e-mail.`,
+        ].join("\n")
+      : [
+          `Olá,`,
+          ``,
+          `Seu acesso à clínica ${input.clinicName} no Vislumbre está liberado.`,
+          ``,
+          `1. Abra o link abaixo`,
+          `2. Crie sua senha (ou entre, se já tiver conta) com este e-mail`,
+          `3. Aceite o convite na tela`,
+          `4. Use o painel em ${publicAppUrl()}/clinica e a ferramenta em ${publicAppUrl()}/consulta`,
+          ``,
+          input.inviteUrl,
+          ``,
+          `Se não solicitou este acesso, ignore este e-mail.`,
+        ].join("\n"),
   });
   return { sent: true as const };
 }

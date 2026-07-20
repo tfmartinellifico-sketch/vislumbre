@@ -6,8 +6,18 @@ import { Suspense, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { Logo } from "@/components/brand/Logo";
 import { FirebaseAccount } from "@/components/clinica/FirebaseAccount";
-import { acceptInvite, loadInvite, loadMyClinicId } from "@/lib/platform";
-import type { Invite } from "@/lib/platform-types";
+import {
+  acceptInvite,
+  loadClinic,
+  loadInvite,
+  loadMyClinicId,
+} from "@/lib/platform";
+import {
+  isDemoClinic,
+  postAuthDestination,
+  type Clinic,
+  type Invite,
+} from "@/lib/platform-types";
 import { ENTRAR_COPY } from "@/lib/landing-copy";
 
 function EntrarInner() {
@@ -16,6 +26,7 @@ function EntrarInner() {
   const inviteId = params.get("invite");
   const [user, setUser] = useState<User | null>(null);
   const [invite, setInvite] = useState<Invite | null>(null);
+  const [clinic, setClinic] = useState<Clinic | null>(null);
   const [name, setName] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -31,11 +42,20 @@ function EntrarInner() {
   useEffect(() => {
     if (!user) {
       setHasClinic(null);
+      setClinic(null);
       return;
     }
-    loadMyClinicId()
-      .then((id) => setHasClinic(Boolean(id)))
-      .catch(() => setHasClinic(false));
+    void (async () => {
+      try {
+        const id = await loadMyClinicId();
+        setHasClinic(Boolean(id));
+        if (id) setClinic(await loadClinic(id));
+        else setClinic(null);
+      } catch {
+        setHasClinic(false);
+        setClinic(null);
+      }
+    })();
   }, [user]);
 
   async function claimInvite() {
@@ -43,15 +63,19 @@ function EntrarInner() {
     setBusy(true);
     setMsg("");
     try {
-      await acceptInvite(inviteId, name || "Profissional");
+      const clinicId = await acceptInvite(inviteId, name || "Profissional");
+      const c = await loadClinic(clinicId);
+      setClinic(c);
       setMsg("Convite aceito. Redirecionando…");
-      router.push("/clinica");
+      router.push(postAuthDestination(c));
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Falha ao aceitar convite.");
     } finally {
       setBusy(false);
     }
   }
+
+  const demo = isDemoClinic(clinic);
 
   return (
     <div className="grain atmosphere min-h-screen">
@@ -98,15 +122,23 @@ function EntrarInner() {
 
         {user && !invite && hasClinic === true && (
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/clinica" className="btn-primary">
-              Abrir painel da clínica
-            </Link>
-            <Link
-              href="/consulta"
-              className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
-            >
-              Abrir ferramenta
-            </Link>
+            {demo ? (
+              <Link href="/consulta" className="btn-primary">
+                Abrir demonstração
+              </Link>
+            ) : (
+              <>
+                <Link href="/clinica" className="btn-primary">
+                  Abrir painel da clínica
+                </Link>
+                <Link
+                  href="/consulta"
+                  className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+                >
+                  Abrir ferramenta
+                </Link>
+              </>
+            )}
           </div>
         )}
 

@@ -63,6 +63,7 @@ import { currentUser, observeUser, saveCloudConsulta } from "@/lib/firebase-clou
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { loadClinic, loadMyClinicId, logUsage } from "@/lib/platform";
 import {
+  isDemoClinic,
   resolveToolAccess,
   type Clinic,
   type ToolAccessReason,
@@ -445,15 +446,23 @@ export function ConsultaApp() {
           )}
           {accessGate === "license" && (
             <>
-              <Link href="/clinica" className="btn-primary">
-                {blocked.license.plan}
-              </Link>
-              <Link
-                href="/#contato"
-                className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
-              >
-                {blocked.license.contact}
-              </Link>
+              {isDemoClinic(clinicAccess) ? (
+                <Link href="/#contato" className="btn-primary">
+                  {blocked.license.contact}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/clinica" className="btn-primary">
+                    {blocked.license.plan}
+                  </Link>
+                  <Link
+                    href="/#contato"
+                    className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+                  >
+                    {blocked.license.contact}
+                  </Link>
+                </>
+              )}
             </>
           )}
           {accessGate === "unavailable" && (
@@ -1179,9 +1188,13 @@ export function ConsultaApp() {
                     ? "neste aparelho e na nuvem"
                     : "neste aparelho"}
                   . Veja em{" "}
-                  <Link href="/clinica" className="underline">
-                    Clínica
-                  </Link>
+                  {isDemoClinic(clinicAccess) ? (
+                    <span>esta sessão de demonstração</span>
+                  ) : (
+                    <Link href="/clinica" className="underline">
+                      Clínica
+                    </Link>
+                  )}
                   .
                 </p>
               )}

@@ -179,6 +179,25 @@ export function resolveToolAccess(input: {
   return isClinicAccessAllowed(input.clinic) ? "ok" : "license";
 }
 
+/** Conta em ambiente de demonstração (só ferramenta). */
+export function isDemoClinic(clinic: Clinic | null | undefined) {
+  return Boolean(clinic && clinic.environment === "demo");
+}
+
+/** Painel /clinica (equipe, billing, histórico) — só cliente. */
+export function canAccessClientPanel(clinic: Clinic | null | undefined) {
+  return Boolean(
+    clinic &&
+      clinic.environment === "client" &&
+      isClinicAccessAllowed(clinic),
+  );
+}
+
+/** Destino após login / aceite de convite. */
+export function postAuthDestination(clinic: Clinic | null | undefined) {
+  return isDemoClinic(clinic) ? "/consulta" : "/clinica";
+}
+
 export function adminEmailsFromEnv() {
   const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "";
   return raw

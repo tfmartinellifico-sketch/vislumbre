@@ -98,6 +98,10 @@ export const APP_COPY = {
       "Aguarde a liberação do admin ou aceite o convite recebido por e-mail.",
     noClinicLink: "Solicitar demonstração",
     openTool: "Abrir ferramenta",
+    demoOnlyTitle: "Acesso de demonstração",
+    demoOnlyBody:
+      "Este acesso libera apenas a ferramenta de consulta para avaliação. O painel da clínica (equipe, plano e histórico) fica disponível após a contratação.",
+    demoOnlyCta: "Abrir demonstração",
     profile: "Profissional responsável",
     history: "Histórico de sessões",
     historyNote:

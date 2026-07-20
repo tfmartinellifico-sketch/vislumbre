@@ -73,6 +73,7 @@ async function notifyInviteEmail(input: {
   clinicName: string;
   inviteId: string;
   role: string;
+  environment?: "demo" | "client";
 }) {
   try {
     await fetch("/api/email/invite", {
@@ -83,6 +84,7 @@ async function notifyInviteEmail(input: {
         clinicName: input.clinicName,
         inviteUrl: inviteUrl(input.inviteId),
         role: input.role,
+        environment: input.environment ?? "client",
       }),
     });
   } catch {
@@ -280,6 +282,7 @@ export async function createClinicAsAdmin(input: {
     clinicName: clinic.name,
     inviteId: inviteRef.id,
     role: "owner",
+    environment,
   });
 
   return { clinicId: clinicRef.id, inviteId: inviteRef.id };
@@ -484,6 +487,7 @@ export async function createMemberInvite(input: {
     clinicName: input.clinicName,
     inviteId: ref.id,
     role: input.role,
+    environment: clinic.environment,
   });
 
   return ref.id;

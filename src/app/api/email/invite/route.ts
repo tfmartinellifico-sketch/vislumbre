@@ -8,6 +8,7 @@ export async function POST(req: Request) {
       clinicName?: string;
       inviteUrl?: string;
       role?: string;
+      environment?: "demo" | "client";
     };
     if (!body.to || !body.clinicName || !body.inviteUrl) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
       clinicName: body.clinicName,
       inviteUrl: body.inviteUrl,
       role: body.role ?? "member",
+      environment: body.environment ?? "client",
     });
     return NextResponse.json(result);
   } catch (err) {

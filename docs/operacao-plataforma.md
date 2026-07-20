@@ -45,9 +45,9 @@ Fluxo completo:
 5. O lead abre o link (formato `https://vislumbre.me/entrar?invite=...`)
 6. Cria senha / entra com o **mesmo e-mail** do pedido
 7. Clica **Aceitar convite**
-8. Vai para **`/clinica`** (painel) e **`/consulta`** (ferramenta)
+8. Vai para **`/consulta`** se for **demo** (só ferramenta), ou **`/clinica`** se for **cliente**
 
-Resumo para o lead: **sempre entra pelo link do e-mail** (ou `/entrar` depois que a conta já existir).
+Importante: conta **demo** não acessa o painel `/clinica` (equipe, billing, histórico). Só a ferramenta de demonstração.
 
 ## 5. E-mail (Resend)
 

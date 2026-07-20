@@ -37,7 +37,9 @@ import {
 } from "@/lib/platform";
 import {
   ENVIRONMENT_LABELS,
+  canAccessClientPanel,
   isClinicAccessAllowed,
+  isDemoClinic,
   PLAN_LABELS,
   STATUS_LABELS,
   type Clinic,
@@ -75,6 +77,7 @@ export function ClinicaPanel() {
   const [actionMsg, setActionMsg] = useState("");
   const [zipConsent, setZipConsent] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
+  const [orgReady, setOrgReady] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -107,8 +110,10 @@ export function ClinicaPanel() {
       if (!next) {
         setClinic(null);
         setMembers([]);
+        setOrgReady(true);
         return;
       }
+      setOrgReady(false);
       setCloudBusy(true);
       try {
         await logUsage({
@@ -140,6 +145,7 @@ export function ClinicaPanel() {
         );
       } finally {
         setCloudBusy(false);
+        setOrgReady(true);
       }
     },
     [loadOrg],
@@ -198,6 +204,8 @@ export function ClinicaPanel() {
   }
 
   const accessOk = isClinicAccessAllowed(clinic);
+  const clientPanelOk = canAccessClientPanel(clinic);
+  const demoOnly = isDemoClinic(clinic);
 
   async function startCheckout(plan: "mensal" | "anual") {
     if (!clinic || !user) return;
@@ -229,6 +237,40 @@ export function ClinicaPanel() {
     }
   }
 
+  if (user && !orgReady) {
+    return (
+      <div className="grain atmosphere flex min-h-screen items-center justify-center px-5">
+        <p className="text-[14px] text-ink-soft">Verificando acesso…</p>
+      </div>
+    );
+  }
+
+  if (user && demoOnly) {
+    return (
+      <div className="grain atmosphere flex min-h-screen flex-col items-center justify-center px-5 text-center">
+        <Logo href="/" size="md" />
+        <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-sand">
+          Demonstração
+        </p>
+        <h1 className="display mt-3 text-3xl text-ink">{cp.demoOnlyTitle}</h1>
+        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+          {cp.demoOnlyBody}
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/consulta" className="btn-primary">
+            {cp.demoOnlyCta}
+          </Link>
+          <Link
+            href="/entrar"
+            className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+          >
+            {cp.navAccount}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grain atmosphere min-h-screen">
       <header className="border-b border-ink/8 bg-paper/90 backdrop-blur-xl">
@@ -238,7 +280,7 @@ export function ClinicaPanel() {
             <Link href="/entrar" className="text-ink-soft hover:text-ink">
               {cp.navAccount}
             </Link>
-            {accessOk ? (
+            {clientPanelOk || accessOk ? (
               <Link href="/consulta" className="btn-primary !py-2 !px-3.5">
                 {cp.openTool}
               </Link>
@@ -255,12 +297,6 @@ export function ClinicaPanel() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-12 px-5 py-12 md:py-16">
-        {clinic?.environment === "demo" && (
-          <div className="rounded-xl border border-sand/40 bg-sand/15 px-4 py-3 text-[13px] text-ink">
-            {cp.demoBanner}
-          </div>
-        )}
-
         <section>
           <p className="eyebrow">Clínica</p>
           <h1 className="display mt-3 text-4xl tracking-tight md:text-5xl">
@@ -269,7 +305,7 @@ export function ClinicaPanel() {
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-ink-soft">
             {cp.intro}
           </p>
-          {accessOk && (
+          {clientPanelOk && (
             <Link href="/consulta" className="btn-primary mt-6 inline-flex">
               {cp.openTool}
             </Link>

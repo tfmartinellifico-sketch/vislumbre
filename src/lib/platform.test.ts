@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { canAcceptInvite, canInviteMember } from "./seats";
-import { isClinicAccessAllowed, resolveToolAccess, trialEndDate, type Clinic } from "./platform-types";
+import {
+  canAccessClientPanel,
+  isClinicAccessAllowed,
+  postAuthDestination,
+  resolveToolAccess,
+  trialEndDate,
+  type Clinic,
+} from "./platform-types";
 import { computePilotMetrics } from "./metrics";
 
 function clinic(partial: Partial<Clinic>): Clinic {
@@ -116,6 +123,24 @@ describe("resolveToolAccess", () => {
         clinic: clinic({ status: "active", trialEndsAt: null }),
       }),
     ).toBe("ok");
+  });
+});
+
+describe("demo vs client destinations", () => {
+  it("demo não acessa painel cliente", () => {
+    const demo = clinic({ environment: "demo", status: "trial" });
+    expect(canAccessClientPanel(demo)).toBe(false);
+    expect(postAuthDestination(demo)).toBe("/consulta");
+  });
+
+  it("cliente acessa painel", () => {
+    const client = clinic({
+      environment: "client",
+      status: "active",
+      trialEndsAt: null,
+    });
+    expect(canAccessClientPanel(client)).toBe(true);
+    expect(postAuthDestination(client)).toBe("/clinica");
   });
 });
 

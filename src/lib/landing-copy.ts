@@ -254,7 +254,7 @@ export const DEMO_COPY = {
     {
       n: "3",
       t: "Entre e explore",
-      d: "Abra o link, crie sua senha e use a ferramenta. Depois, o painel da clínica fica em /clinica.",
+      d: "Abra o link, crie sua senha e use a ferramenta de demonstração. O painel completo da clínica só entra após a contratação.",
     },
   ],
   formTitle: "Pedir acesso à demonstração",
