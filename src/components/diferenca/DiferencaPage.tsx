@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/brand/Logo";
+import { DIFERENCA_COPY } from "@/lib/landing-copy";
 
 const fade = {
   initial: { opacity: 0, y: 18 },
@@ -13,16 +14,16 @@ const fade = {
 
 const COMPARISON = [
   {
-    vislumbre: "Ilustração visual para alinhar expectativa na consulta",
+    vislumbre: "Ilustração para alinhar expectativa na consulta",
     other: "Prévia com aparência de resultado final",
   },
   {
-    vislumbre: "Três intensidades — inclusive o exagero a evitar",
-    other: "Foco em “como vai ficar”",
+    vislumbre: "Três intensidades, incluindo exagero a evitar",
+    other: "Ênfase em “como ficará”",
   },
   {
-    vislumbre: "Avisos claros em tela, na câmera ao vivo e no PDF",
-    other: "Imagens fáceis de confundir com before-and-after",
+    vislumbre: "Avisos em tela, câmera ao vivo e PDF",
+    other: "Risco de confundir com before-and-after",
   },
   {
     vislumbre: "Sem dose, produto ou simulação de procedimento",
@@ -30,29 +31,16 @@ const COMPARISON = [
   },
 ];
 
-const PILLARS = [
-  {
-    t: "Linguagem ilustrativa",
-    d: "Volumes suaves e tracejados — para conversar, não para imitar pele tratada.",
-  },
-  {
-    t: "Limites à vista",
-    d: "O cenário exagerado existe de propósito: mostra o que a clínica não busca.",
-  },
-  {
-    t: "Registro responsável",
-    d: "Checklist, confirmação da paciente e PDF com avisos — apoio ao consentimento.",
-  },
-];
-
 export function DiferencaPage() {
+  const c = DIFERENCA_COPY;
+
   return (
     <div className="grain atmosphere min-h-screen">
       <header className="border-b border-ink/8 bg-paper/90 px-5 py-4 backdrop-blur-xl md:px-10">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <Logo href="/" size="md" />
           <Link href="/consulta" className="btn-primary !rounded-full !py-2 !px-4">
-            Experimentar
+            Demonstração
           </Link>
         </div>
       </header>
@@ -60,26 +48,18 @@ export function DiferencaPage() {
       <main>
         <section className="mx-auto max-w-5xl px-5 py-16 md:px-10 md:py-24">
           <motion.div {...fade}>
-            <p className="eyebrow">A diferença</p>
+            <p className="eyebrow">Diferenciação</p>
             <h1 className="display mt-4 max-w-3xl text-[clamp(2.4rem,5.5vw,4rem)] leading-[1.05] tracking-tight text-ink">
-              Feito para a conversa.
-              <span className="mt-2 block text-ink-soft">
-                Não para parecer o resultado.
-              </span>
+              {c.hero.title}
+              <span className="mt-2 block text-ink-soft">{c.hero.accent}</span>
             </h1>
             <p className="mt-7 max-w-2xl text-[16px] leading-[1.8] text-ink-soft">
-              Muitas ferramentas de estética facial prometem um “preview” do
-              after. O Vislumbre escolhe outro caminho: apoiar o profissional a
-              explicar possibilidades e limites — com honestidade visual — antes
-              da decisão.
+              {c.hero.body}
             </p>
           </motion.div>
 
-          <motion.div
-            {...fade}
-            className="mt-16 grid gap-5 md:grid-cols-3"
-          >
-            {PILLARS.map((p) => (
+          <motion.div {...fade} className="mt-16 grid gap-5 md:grid-cols-3">
+            {c.pillars.map((p) => (
               <article
                 key={p.t}
                 className="rounded-2xl border border-ink/10 bg-paper/90 p-6"
@@ -102,9 +82,7 @@ export function DiferencaPage() {
               Vislumbre × simuladores de resultado
             </h2>
             <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-mist">
-              Ferramentas de simulação fotorealista existem e têm seu lugar. O
-              Vislumbre não compete nesse campo — compete na qualidade da
-              expectativa alinhada.
+              {c.compareIntro}
             </p>
 
             <div className="mt-12 overflow-hidden rounded-2xl border border-paper/12">
@@ -133,15 +111,10 @@ export function DiferencaPage() {
           <motion.div {...fade}>
             <p className="eyebrow">Para a clínica</p>
             <h2 className="display mt-3 max-w-xl text-3xl tracking-tight md:text-4xl">
-              Menos mal-entendido. Mais decisão consciente.
+              {c.clinic.title}
             </h2>
             <ul className="mt-10 grid gap-4 sm:grid-cols-2">
-              {[
-                "A paciente vê opções e o que se evita — na mesma conversa",
-                "O profissional documenta o que foi mostrado e discutido",
-                "A ferramenta reforça que a imagem não é garantia",
-                "O kit físico (opcional) torna o volume tangível na mesa",
-              ].map((item) => (
+              {c.clinic.items.map((item) => (
                 <li
                   key={item}
                   className="flex gap-3 rounded-xl border border-ink/10 bg-fog/60 px-4 py-4 text-[14px] leading-relaxed text-ink-soft"
@@ -154,10 +127,10 @@ export function DiferencaPage() {
 
             <div className="mt-14 flex flex-wrap gap-3">
               <Link href="/consulta" className="btn-primary !rounded-full">
-                Abrir a ferramenta
+                Acessar demonstração
               </Link>
-              <Link href="/" className="btn-ghost !rounded-full">
-                Voltar ao site
+              <Link href="/#contato" className="btn-ghost !rounded-full">
+                Solicitar piloto
               </Link>
             </div>
           </motion.div>

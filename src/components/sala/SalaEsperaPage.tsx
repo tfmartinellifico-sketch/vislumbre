@@ -24,6 +24,11 @@ export function SalaEsperaPage() {
           </div>
         </div>
 
+        <p className="mb-4 text-[12px] text-ink-soft print:hidden">
+          Material para a clínica disponibilizar ao paciente na sala de espera.
+          Imprima e personalize com o nome da clínica, se desejar.
+        </p>
+
         <article className="rounded-3xl border border-ink/10 bg-paper p-8 shadow-[0_24px_60px_-40px_rgba(14,22,21,0.3)] print:shadow-none md:p-12">
           <Logo size="lg" className="mb-8" />
           <h1 className="display text-3xl tracking-tight text-ink md:text-4xl">

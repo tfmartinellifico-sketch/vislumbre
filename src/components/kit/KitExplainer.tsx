@@ -29,12 +29,13 @@ export function KitExplainer() {
             Kit Contorno
           </p>
           <h1 className="display mt-4 max-w-3xl text-[clamp(2.4rem,6vw,4.5rem)] leading-[0.95] tracking-tight text-ink">
-            Volume que a paciente sente na mão.
+            Apoio tátil na mesa da consulta.
           </h1>
           <p className="mt-7 max-w-2xl text-[16px] leading-[1.75] text-ink-soft">
-            Uma base neutra e peças de volume para a mesa da consulta. Serve para
-            mostrar <em>onde</em> e <em>quanto</em> — sem agulha, sem manequim de
-            curso e sem fingir que é o rosto real da paciente.
+            Base neutra e peças de volume para a clínica tangibilizar regiões
+            já discutidas na ferramenta digital. Complemento opcional ao fluxo
+            na mesa — sem simular procedimento nem substituir a avaliação
+            clínica.
           </p>
         </motion.div>
 

@@ -12,6 +12,7 @@ import {
   loadInvite,
 } from "@/lib/platform";
 import type { Invite } from "@/lib/platform-types";
+import { ENTRAR_COPY } from "@/lib/landing-copy";
 
 function EntrarInner() {
   const params = useSearchParams();
@@ -76,11 +77,11 @@ function EntrarInner() {
         </div>
       </header>
       <main className="mx-auto max-w-lg px-5 py-12">
-        <h1 className="display text-3xl tracking-tight">Entrar no Vislumbre</h1>
+        <h1 className="display text-3xl tracking-tight">{ENTRAR_COPY.title}</h1>
         <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
           {invite
-            ? `Convite para ${invite.clinicName} (${invite.email}). Cadastre-se ou entre com este e-mail.`
-            : "Crie sua conta, inicie o trial ou aceite um convite da sua clínica."}
+            ? ENTRAR_COPY.inviteIntro(invite.clinicName, invite.email)
+            : ENTRAR_COPY.defaultIntro}
         </p>
 
         <div className="mt-8">
@@ -103,7 +104,7 @@ function EntrarInner() {
               onClick={claimInvite}
               className="btn-primary w-full disabled:opacity-40"
             >
-              Aceitar convite e entrar na clínica
+              {ENTRAR_COPY.inviteButton}
             </button>
           </div>
         )}
@@ -111,7 +112,7 @@ function EntrarInner() {
         {user && !invite && (
           <div className="mt-8 space-y-3 rounded-2xl border border-ink/10 bg-paper p-5">
             <p className="text-[13px] font-medium text-ink">
-              Abrir clínica em trial (14 dias)
+              {ENTRAR_COPY.trialTitle}
             </p>
             <label className="block text-[12px] text-ink-soft">
               Seu nome
@@ -143,7 +144,7 @@ function EntrarInner() {
               onClick={selfServeClinic}
               className="btn-primary w-full disabled:opacity-40"
             >
-              Começar trial
+              {ENTRAR_COPY.trialButton}
             </button>
           </div>
         )}

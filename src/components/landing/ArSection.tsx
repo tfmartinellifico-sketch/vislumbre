@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { AR_COPY } from "@/lib/landing-copy";
 
 const fade = {
   initial: { opacity: 0, y: 18 },
@@ -11,40 +12,24 @@ const fade = {
 };
 
 export function ArSection() {
+  const c = AR_COPY;
+
   return (
     <section id="ar" className="border-t border-ink/10 bg-ink px-5 py-24 text-paper md:px-10">
       <motion.div {...fade} className="mx-auto max-w-6xl">
         <p className="text-[11px] uppercase tracking-[0.26em] text-sand">
-          Realidade aumentada
+          {c.eyebrow}
         </p>
         <h2 className="display mt-4 max-w-2xl text-4xl leading-tight tracking-tight md:text-[3.25rem]">
-          O que é o AR no Vislumbre — e o que não é
+          {c.title}
         </h2>
         <p className="mt-6 max-w-2xl text-[15px] leading-[1.75] text-mist">
-          AR aqui significa <strong className="text-paper">mostrar na câmera</strong>{" "}
-          as mesmas ideias que você marcou na foto. É um espelho inteligente para
-          a conversa — não uma previsão do resultado.
+          {c.intro}
         </p>
 
         <div className="mt-14 grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-start">
           <div className="space-y-6">
-            {[
-              {
-                n: "1",
-                t: "Você marca na foto",
-                d: "Na etapa Análise, indica regiões (malar, sulco, mento…). Isso vira o “mapa” da conversa.",
-              },
-              {
-                n: "2",
-                t: "Abre a câmera ao vivo",
-                d: "Na etapa Ao vivo, o celular reconhece o rosto e sobrepõe volumes suaves nas mesmas regiões — como um filtro educativo, não um after.",
-              },
-              {
-                n: "3",
-                t: "Troca o cenário na hora",
-                d: "Discreto, equilibrado ou exagerado. A paciente vê na própria face, mas sempre com o aviso de que não é garantia.",
-              },
-            ].map((step) => (
+            {c.steps.map((step) => (
               <div
                 key={step.n}
                 className="flex gap-4 border-l border-paper/15 pl-5"
@@ -60,11 +45,9 @@ export function ArSection() {
             ))}
 
             <div className="rounded-xl border border-paper/12 bg-paper/[0.05] p-5">
-              <p className="text-[13px] font-medium text-sand">Óculos XR (opcional)</p>
+              <p className="text-[13px] font-medium text-sand">{c.xrNote.title}</p>
               <p className="mt-2 text-[13px] leading-relaxed text-mist">
-                Em headsets como Meta Quest, o mesmo conceito aparece na visão
-                imersiva. Se o aparelho não suportar, use o modo celular — é o
-                principal hoje.
+                {c.xrNote.body}
               </p>
             </div>
           </div>
@@ -75,22 +58,22 @@ export function ArSection() {
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-sea-soft/30 bg-sea/10 p-5">
             <p className="text-[12px] uppercase tracking-[0.16em] text-sea-soft">
-              É
+              O recurso é
             </p>
             <ul className="mt-3 space-y-2 text-[14px] leading-relaxed text-mist">
-              <li>Ilustração ao vivo do plano discutido</li>
-              <li>Comparação de intensidade na mesa</li>
-              <li>Apoio à conversa honesta</li>
+              {c.is.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
           <div className="rounded-xl border border-warn/30 bg-warn/10 p-5">
             <p className="text-[12px] uppercase tracking-[0.16em] text-sand">
-              Não é
+              O recurso não é
             </p>
             <ul className="mt-3 space-y-2 text-[14px] leading-relaxed text-mist">
-              <li>Simulador de injeção ou cirurgia</li>
-              <li>Previsão do resultado real</li>
-              <li>Substituto do exame clínico</li>
+              {c.isNot.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </div>
         </div>
@@ -99,7 +82,7 @@ export function ArSection() {
           href="/consulta"
           className="btn-primary mt-10 inline-flex !bg-paper !text-ink hover:!bg-mist"
         >
-          Experimentar o AR na ferramenta
+          {c.cta}
         </Link>
       </motion.div>
     </section>
@@ -107,6 +90,8 @@ export function ArSection() {
 }
 
 function ArDiagram() {
+  const c = AR_COPY;
+
   return (
     <div className="overflow-hidden rounded-2xl border border-paper/10 bg-paper/[0.04]">
       <div className="relative aspect-[4/5] max-h-[480px] bg-gradient-to-b from-sea-deep to-ink">
@@ -229,9 +214,7 @@ function ArDiagram() {
             })}
           </svg>
           <div className="absolute inset-x-0 bottom-0 bg-ink/70 px-4 py-3 backdrop-blur-sm">
-            <p className="text-[11px] text-mist">
-              Equilibrado · demonstração · não é o resultado
-            </p>
+            <p className="text-[11px] text-mist">{c.diagramCaption}</p>
           </div>
         </div>
         <p className="absolute left-8 top-8 text-[10px] uppercase tracking-[0.2em] text-sand">
@@ -239,8 +222,7 @@ function ArDiagram() {
         </p>
       </div>
       <p className="border-t border-paper/10 px-5 py-4 text-[12px] leading-relaxed text-mist">
-        O sistema localiza o rosto, encaixa as marcas e desenha volumes suaves
-        por cima — como na foto, mas em movimento.
+        {c.diagramFooter}
       </p>
     </div>
   );

@@ -41,12 +41,13 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: `${SITE_NAME} — Clareza antes da decisão`,
+  title: `${SITE_NAME} — Plataforma para consulta de estética facial`,
   description:
-    "Ferramenta de consulta para estética facial: cenários de conversa, visualização ao vivo e registro responsável — sem prometer resultado.",
+    "Solução B2B para clínicas e profissionais: apoio visual à consulta de estética facial, cenários de intensidade, registro documentado e gestão de equipe — sem simular resultado.",
   openGraph: {
-    title: SITE_NAME,
-    description: "Clareza antes da decisão. Demonstração para conversa, nunca garantia.",
+    title: `${SITE_NAME} — Para clínicas e profissionais`,
+    description:
+      "Clareza antes da decisão. Ferramenta ilustrativa para a consulta, não simulador de resultado.",
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "pt_BR",

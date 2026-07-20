@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { LogoMark } from "@/components/brand/Logo";
+import { HERO_VISUAL } from "@/lib/landing-copy";
 
 /** Ilustração editorial — rosto legível, volumes só em regiões de consulta. */
 export function HeroVisual() {
@@ -240,11 +241,10 @@ export function HeroVisual() {
 
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 to-transparent px-6 pb-8 pt-16 md:px-10 md:pb-10">
         <p className="text-[10px] uppercase tracking-[0.24em] text-sand">
-          Visualização para conversa
+          {HERO_VISUAL.caption}
         </p>
         <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-mist/90">
-          Contorno e volume alinhados à expectativa — nunca como resultado
-          garantido.
+          {HERO_VISUAL.note}
         </p>
       </div>
     </div>

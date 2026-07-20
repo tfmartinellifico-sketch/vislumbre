@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ROADMAP_COPY } from "@/lib/landing-copy";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -9,26 +10,21 @@ const fade = {
   viewport: { once: true },
 };
 
-const ITEMS = [
-  { label: "Ferramenta de consulta", status: "done", note: "Fluxo completo no ar" },
-  { label: "Leads + painel admin", status: "done", note: "/admin · e-mail Resend" },
-  { label: "Clínicas, trial e convites", status: "done", note: "Assentos + e-mail" },
-  { label: "Bloqueio trial/suspensa", status: "done", note: "Ferramenta trava de verdade" },
-  { label: "Export JSON/CSV/ZIP/prontuário", status: "done", note: "Em /clinica" },
-  { label: "Checkout Stripe", status: "done", note: "Webhook → active/suspended" },
-  { label: "Kit físico fabricado", status: "next", note: "Spec pronta — fora do código" },
-];
-
 export function RoadmapSection() {
+  const c = ROADMAP_COPY;
+
   return (
     <section id="status" className="section-pad border-t border-ink/8 bg-paper">
       <motion.div {...fade} className="mx-auto max-w-6xl">
-        <p className="eyebrow">Onde estamos</p>
+        <p className="eyebrow">{c.eyebrow}</p>
         <h2 className="display mt-4 text-4xl tracking-tight md:text-5xl">
-          Feito e o que vem depois
+          {c.title}
         </h2>
+        <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-soft">
+          {c.intro}
+        </p>
         <ul className="mt-12 grid gap-3 md:grid-cols-2">
-          {ITEMS.map((item) => (
+          {c.items.map((item) => (
             <li
               key={item.label}
               className="flex items-start gap-3 rounded-xl border border-ink/10 bg-fog/50 px-4 py-3.5"
@@ -46,14 +42,12 @@ export function RoadmapSection() {
           ))}
         </ul>
         <p className="mt-8 text-[13px] text-ink-soft">
-          Sala de espera:{" "}
           <Link href="/sala" className="text-sea-deep underline">
-            /sala
+            Material para sala de espera
           </Link>
           {" · "}
-          Admin:{" "}
           <Link href="/admin" className="text-sea-deep underline">
-            /admin
+            Área administrativa
           </Link>
         </p>
       </motion.div>
