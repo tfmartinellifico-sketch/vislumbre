@@ -112,106 +112,77 @@ function ArDiagram() {
               </radialGradient>
             </defs>
 
+            {/* Perfil ¾ — sem olhar frontal */}
             <path
-              d="M88 130 C92 88, 118 72, 140 68 C162 72, 188 88, 192 130 C198 175, 200 230, 188 275 C175 310, 155 320, 140 322 C125 320, 105 310, 92 275 C80 230, 82 175, 88 130 Z"
+              d="M95 145 C98 100, 118 78, 145 72 C170 68, 195 82, 205 115 C210 140, 212 165, 208 185 C218 198, 222 215, 220 235 C218 250, 210 262, 198 270 C206 278, 208 290, 204 302 C198 320, 180 335, 155 342 C130 348, 105 338, 95 315 C88 290, 90 250, 92 210 C93 180, 93 160, 95 145 Z"
               fill="url(#arSkin)"
-              opacity="0.9"
+              opacity="0.92"
             />
-
             <path
-              d="M118 118 Q128 112, 138 116"
+              d="M168 145 Q182 138, 195 145"
               fill="none"
-              stroke="#6b5344"
-              strokeWidth="1.5"
-              opacity="0.5"
+              stroke="#5c4a3e"
+              strokeWidth="1.3"
+              opacity="0.4"
               strokeLinecap="round"
             />
             <path
-              d="M142 116 Q152 112, 162 118"
+              d="M172 158 Q185 154, 196 160"
               fill="none"
-              stroke="#6b5344"
-              strokeWidth="1.5"
-              opacity="0.5"
-              strokeLinecap="round"
-            />
-
-            <ellipse cx="128" cy="138" rx="10" ry="6" fill="#faf8f5" opacity="0.9" />
-            <ellipse cx="152" cy="138" rx="10" ry="6" fill="#faf8f5" opacity="0.9" />
-            <circle cx="129" cy="139" r="4" fill="#4a4038" />
-            <circle cx="153" cy="139" r="4" fill="#4a4038" />
-
-            <path
-              d="M140 148 L136 168 Q140 172, 144 168 Z"
-              fill="#c9a88a"
-              opacity="0.35"
-            />
-            <path
-              d="M132 188 Q140 194, 148 188"
-              fill="none"
-              stroke="#c4847a"
+              stroke="#5c4a3e"
               strokeWidth="1.2"
-              opacity="0.5"
+              opacity="0.4"
               strokeLinecap="round"
             />
-
-            <ellipse
-              cx="112"
-              cy="178"
-              rx="22"
-              ry="16"
+            <path
+              d="M198 165 C205 185, 208 205, 204 222 C200 228, 192 230, 188 226"
+              fill="none"
+              stroke="#9a7358"
+              strokeWidth="1.1"
+              opacity="0.4"
+              strokeLinecap="round"
+            />
+            <path
+              d="M185 268 C195 272, 202 278, 205 284"
+              fill="none"
+              stroke="#b87870"
+              strokeWidth="1.5"
+              opacity="0.4"
+              strokeLinecap="round"
+            />
+            <path
+              d="M170 210 C185 205, 200 215, 202 232 C198 248, 178 250, 165 240 C162 225, 165 215, 170 210 Z"
               fill="url(#arVol)"
               stroke="#6b9a90"
               strokeWidth="0.8"
               strokeDasharray="4 3"
             />
-            <ellipse
-              cx="168"
-              cy="178"
-              rx="22"
-              ry="16"
-              fill="url(#arVol)"
-              stroke="#6b9a90"
-              strokeWidth="0.8"
-              strokeDasharray="4 3"
-            />
-            <ellipse
-              cx="140"
-              cy="218"
-              rx="32"
-              ry="12"
+            <path
+              d="M130 300 C155 295, 185 305, 190 322 C175 335, 145 338, 125 328 C122 315, 125 305, 130 300 Z"
               fill="url(#arVol)"
               stroke="#6b9a90"
               strokeWidth="0.7"
               strokeDasharray="3 3"
-              opacity="0.65"
+              opacity="0.7"
             />
-
             <ellipse
               cx="140"
-              cy="175"
-              rx="88"
-              ry="118"
+              cy="200"
+              rx="78"
+              ry="105"
               fill="none"
-              stroke="rgba(250,252,251,0.5)"
-              strokeWidth="1.2"
+              stroke="rgba(250,252,251,0.45)"
+              strokeWidth="1.1"
               strokeDasharray="5 4"
             />
-
-            {[...Array(12)].map((_, i) => {
-              const a = (i / 12) * Math.PI * 2;
-              const x = 140 + Math.cos(a) * 55;
-              const y = 175 + Math.sin(a) * 70;
-              return (
-                <circle
-                  key={i}
-                  cx={x}
-                  cy={y}
-                  r="1.5"
-                  fill="#6b9a90"
-                  opacity="0.55"
-                />
-              );
-            })}
+            {[
+              [175, 220],
+              [190, 235],
+              [155, 315],
+              [175, 325],
+            ].map(([x, y], i) => (
+              <circle key={i} cx={x} cy={y} r="1.8" fill="#6b9a90" opacity="0.7" />
+            ))}
           </svg>
           <div className="absolute inset-x-0 bottom-0 bg-ink/70 px-4 py-3 backdrop-blur-sm">
             <p className="text-[11px] text-mist">{c.diagramCaption}</p>

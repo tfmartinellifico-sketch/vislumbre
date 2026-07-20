@@ -4,18 +4,21 @@ import { motion } from "framer-motion";
 import { LogoMark } from "@/components/brand/Logo";
 import { HERO_VISUAL } from "@/lib/landing-copy";
 
-/** Ilustração editorial — rosto legível, volumes só em regiões de consulta. */
+/**
+ * Hero visual — perfil ¾ editorial (sem olhar frontal).
+ * Diagramas de clínica estética evitam o “olho de cartoon”.
+ */
 export function HeroVisual() {
   return (
     <div className="relative h-full min-h-[44vh] w-full overflow-hidden lg:min-h-full">
       <div className="absolute inset-0 bg-gradient-to-br from-sea-deep via-[#1a4540] to-ink" />
 
       <div
-        className="absolute inset-0 opacity-[0.12]"
+        className="absolute inset-0 opacity-[0.1]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(250,252,251,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(250,252,251,0.15) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+            "linear-gradient(rgba(250,252,251,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(250,252,251,0.12) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
         }}
       />
 
@@ -23,7 +26,7 @@ export function HeroVisual() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 55% 35%, rgba(107,154,144,0.35), transparent 65%), radial-gradient(ellipse 40% 35% at 15% 85%, rgba(203,184,154,0.25), transparent 50%)",
+            "radial-gradient(ellipse 65% 55% at 60% 40%, rgba(107,154,144,0.32), transparent 60%), radial-gradient(ellipse 45% 40% at 20% 80%, rgba(203,184,154,0.2), transparent 50%)",
         }}
       />
 
@@ -32,214 +35,280 @@ export function HeroVisual() {
       </div>
 
       <motion.div
-        className="absolute inset-0 flex items-center justify-center p-8 md:p-12"
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-0 flex items-center justify-center p-6 md:p-10"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
       >
         <svg
-          viewBox="0 0 400 520"
-          className="h-full max-h-[min(72vh,640px)] w-auto max-w-full float-soft drop-shadow-[0_40px_80px_rgba(0,0,0,0.35)]"
+          viewBox="0 0 420 540"
+          className="h-full max-h-[min(74vh,660px)] w-auto max-w-full drop-shadow-[0_40px_80px_rgba(0,0,0,0.4)]"
           aria-hidden
         >
           <defs>
-            <linearGradient id="heroSkin" x1="0.25" y1="0" x2="0.75" y2="1">
-              <stop offset="0%" stopColor="#f7ede4" />
-              <stop offset="50%" stopColor="#e8d4c0" />
-              <stop offset="100%" stopColor="#c9a88a" />
+            <linearGradient id="skin3q" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+              <stop offset="0%" stopColor="#f3e6d8" />
+              <stop offset="40%" stopColor="#e4cdb5" />
+              <stop offset="100%" stopColor="#c4a182" />
             </linearGradient>
-            <linearGradient id="heroShadow" x1="0.5" y1="0" x2="0.5" y2="1">
-              <stop offset="0%" stopColor="#b89578" stopOpacity="0" />
-              <stop offset="100%" stopColor="#9a7358" stopOpacity="0.22" />
+            <linearGradient id="hair3q" x1="0.3" y1="0" x2="0.7" y2="1">
+              <stop offset="0%" stopColor="#2c2420" />
+              <stop offset="100%" stopColor="#1a1512" />
             </linearGradient>
-            <linearGradient id="heroVol" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8fb5ac" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#8fb5ac" stopOpacity="0.08" />
+            <linearGradient id="volSoft" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#8fb5ac" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#8fb5ac" stopOpacity="0.05" />
             </linearGradient>
-            <radialGradient id="heroCheekL" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#d4b89a" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#d4b89a" stopOpacity="0" />
-            </radialGradient>
-            <radialGradient id="heroCheekR" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#d4b89a" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#d4b89a" stopOpacity="0" />
-            </radialGradient>
+            <filter id="softEdge" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" />
+            </filter>
           </defs>
 
-          {/* halo guia */}
+          {/* guia oval discreto */}
           <ellipse
-            cx="200"
-            cy="268"
-            rx="158"
-            ry="198"
+            cx="215"
+            cy="275"
+            rx="168"
+            ry="210"
             fill="none"
-            stroke="rgba(203,184,154,0.22)"
+            stroke="rgba(203,184,154,0.18)"
             strokeWidth="1"
           />
 
-          {/* cabelo / contorno superior */}
+          {/* cabelo — massa suave atrás / topo */}
           <path
-            d="M108 210 C112 130, 168 88, 200 82 C232 88, 288 130, 292 210 C285 175, 248 148, 200 145 C152 148, 115 175, 108 210 Z"
-            fill="#3d3028"
-            opacity="0.55"
+            d="M118 200
+               C95 150, 110 95, 168 78
+               C220 62, 290 78, 318 130
+               C335 165, 340 210, 332 250
+               C325 220, 300 185, 255 170
+               C200 155, 145 170, 125 210 Z"
+            fill="url(#hair3q)"
+            opacity="0.92"
           />
 
-          {/* cabeça */}
+          {/* pescoço */}
           <path
-            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
-            fill="url(#heroSkin)"
-          />
-          <path
-            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
-            fill="url(#heroShadow)"
+            d="M175 400 C185 430, 195 460, 198 490 L248 490 C252 455, 258 425, 265 400 Z"
+            fill="url(#skin3q)"
+            opacity="0.85"
           />
 
-          {/* sombra mandíbula */}
-          <ellipse cx="200" cy="400" rx="72" ry="28" fill="#b89578" opacity="0.12" />
-
-          {/* blush natural */}
-          <ellipse cx="148" cy="268" rx="34" ry="22" fill="url(#heroCheekL)" />
-          <ellipse cx="252" cy="268" rx="34" ry="22" fill="url(#heroCheekR)" />
-
-          {/* sobrancelhas */}
+          {/*
+            Perfil ¾ — contorno clássico:
+            fronte → nariz → lábios → mento → mandíbula → orelha
+            Sem pupilas frontais.
+          */}
           <path
-            d="M148 198 Q168 188, 182 192"
+            d="M155 195
+               C160 130, 195 95, 235 88
+               C270 85, 300 105, 312 145
+               C318 170, 320 195, 315 218
+               C328 235, 335 255, 332 278
+               C330 295, 322 308, 308 318
+               C318 328, 322 340, 318 352
+               C312 372, 295 390, 270 402
+               C245 415, 215 418, 190 408
+               C165 395, 148 365, 145 330
+               C142 290, 145 245, 155 195 Z"
+            fill="url(#skin3q)"
+          />
+
+          {/* sombra lateral (profundidade ¾) */}
+          <path
+            d="M250 110
+               C280 120, 300 160, 305 210
+               C308 250, 300 290, 285 320
+               C270 350, 245 375, 215 385
+               C235 370, 255 340, 265 305
+               C275 265, 278 220, 270 175
+               C262 140, 255 120, 250 110 Z"
+            fill="#b89578"
+            opacity="0.18"
+          />
+
+          {/* orelha (lado visível no ¾) */}
+          <path
+            d="M148 240 C138 245, 132 265, 138 285 C145 300, 158 298, 162 285 C165 270, 160 250, 148 240 Z"
+            fill="#dfc4ad"
+            opacity="0.9"
+          />
+
+          {/* sobrancelha — só a visível, traço fino */}
+          <path
+            d="M248 168 Q268 160, 288 168"
             fill="none"
-            stroke="#6b5344"
-            strokeWidth="2.2"
+            stroke="#5c4a3e"
+            strokeWidth="2"
             strokeLinecap="round"
-            opacity="0.55"
+            opacity="0.4"
           />
+
+          {/* olho fechado / olhar baixo — linha suave, sem iris */}
           <path
-            d="M218 192 Q232 188, 252 198"
+            d="M252 188 Q270 182, 288 190"
             fill="none"
-            stroke="#6b5344"
-            strokeWidth="2.2"
+            stroke="#5c4a3e"
+            strokeWidth="1.6"
             strokeLinecap="round"
-            opacity="0.55"
-          />
-
-          {/* olhos — formato definido, sem blur */}
-          <g opacity="0.88">
-            <ellipse cx="165" cy="222" rx="18" ry="11" fill="#faf8f5" />
-            <ellipse cx="235" cy="222" rx="18" ry="11" fill="#faf8f5" />
-            <ellipse cx="166" cy="223" rx="9" ry="9" fill="#4a4038" />
-            <ellipse cx="236" cy="223" rx="9" ry="9" fill="#4a4038" />
-            <circle cx="169" cy="220" r="2.5" fill="#fafcfb" opacity="0.9" />
-            <circle cx="239" cy="220" r="2.5" fill="#fafcfb" opacity="0.9" />
-          </g>
-
-          {/* nariz suave */}
-          <path
-            d="M200 228 L192 268 Q200 274, 208 268 Z"
-            fill="#c9a88a"
-            opacity="0.35"
-          />
-          <path
-            d="M200 228 Q196 252, 194 268 M200 228 Q204 252, 206 268"
-            fill="none"
-            stroke="#9a7358"
-            strokeWidth="1"
-            opacity="0.35"
-            strokeLinecap="round"
-          />
-
-          {/* lábios */}
-          <path
-            d="M178 318 Q200 332, 222 318 Q200 326, 178 318 Z"
-            fill="#c4847a"
-            opacity="0.55"
-          />
-          <path
-            d="M178 318 Q200 324, 222 318"
-            fill="none"
-            stroke="#a66b62"
-            strokeWidth="1"
             opacity="0.45"
           />
+          <path
+            d="M255 192 Q270 196, 285 192"
+            fill="none"
+            stroke="#5c4a3e"
+            strokeWidth="1"
+            strokeLinecap="round"
+            opacity="0.25"
+          />
 
-          {/* orelhas discretas */}
-          <ellipse cx="112" cy="258" rx="10" ry="18" fill="#dfc4ad" opacity="0.85" />
-          <ellipse cx="288" cy="258" rx="10" ry="18" fill="#dfc4ad" opacity="0.85" />
+          {/* nariz em ¾ */}
+          <path
+            d="M298 195
+               C305 220, 312 245, 308 268
+               C304 278, 295 282, 288 278"
+            fill="none"
+            stroke="#9a7358"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            opacity="0.4"
+          />
 
-          {/* contorno */}
+          {/* lábios — curva discreta de perfil */}
+          <path
+            d="M278 318 C290 322, 300 328, 305 335"
+            fill="none"
+            stroke="#b87870"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.45"
+          />
+          <path
+            d="M278 328 C292 332, 300 336, 304 340"
+            fill="none"
+            stroke="#b87870"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            opacity="0.35"
+          />
+
+          {/* contorno iluminado */}
           <path
             className="contour-draw"
-            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
+            d="M155 195
+               C160 130, 195 95, 235 88
+               C270 85, 300 105, 312 145
+               C318 170, 320 195, 315 218
+               C328 235, 335 255, 332 278
+               C330 295, 322 308, 308 318
+               C318 328, 322 340, 318 352
+               C312 372, 295 390, 270 402
+               C245 415, 215 418, 190 408
+               C165 395, 148 365, 145 330
+               C142 290, 145 245, 155 195 Z"
             fill="none"
-            stroke="rgba(250,252,251,0.35)"
+            stroke="rgba(250,252,251,0.28)"
             strokeWidth="1.2"
           />
 
-          {/* volumes de consulta (malar / sulco) — tracejados, fora dos olhos/boca */}
-          <motion.ellipse
-            cx="148"
-            cy="278"
-            rx="36"
-            ry="26"
-            fill="url(#heroVol)"
-            stroke="rgba(107,154,144,0.55)"
-            strokeWidth="1.2"
-            strokeDasharray="5 4"
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.85, duration: 0.7 }}
-          />
-          <motion.ellipse
-            cx="252"
-            cy="278"
-            rx="36"
-            ry="26"
-            fill="url(#heroVol)"
-            stroke="rgba(107,154,144,0.55)"
-            strokeWidth="1.2"
-            strokeDasharray="5 4"
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.95, duration: 0.7 }}
-          />
-          <motion.ellipse
-            cx="200"
-            cy="348"
-            rx="52"
-            ry="18"
-            fill="url(#heroVol)"
-            stroke="rgba(107,154,144,0.45)"
-            strokeWidth="1"
-            strokeDasharray="4 3"
-            opacity="0.75"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.75 }}
-            transition={{ delay: 1.05, duration: 0.7 }}
-          />
-
-          {/* linhas de análise — terço médio */}
+          {/* volume malar — arco clínico, não mancha */}
           <motion.path
-            d="M148 278 L200 248 L252 278"
-            fill="none"
-            stroke="rgba(107,154,144,0.45)"
-            strokeWidth="0.9"
-            strokeDasharray="4 3"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ delay: 1.2, duration: 1 }}
-          />
-          <motion.line
-            x1="118"
-            y1="248"
-            x2="282"
-            y2="248"
-            stroke="rgba(203,184,154,0.35)"
-            strokeWidth="0.7"
-            strokeDasharray="3 4"
+            d="M255 250
+               C275 245, 295 255, 300 275
+               C295 295, 270 300, 250 290
+               C245 270, 248 255, 255 250 Z"
+            fill="url(#volSoft)"
+            stroke="rgba(143,181,172,0.7)"
+            strokeWidth="1.3"
+            strokeDasharray="6 5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.35, duration: 0.6 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
           />
+
+          {/* volume mandíbula / mento */}
+          <motion.path
+            d="M210 360
+               C240 355, 275 365, 285 385
+               C270 400, 235 405, 205 395
+               C200 380, 205 365, 210 360 Z"
+            fill="url(#volSoft)"
+            stroke="rgba(143,181,172,0.55)"
+            strokeWidth="1.1"
+            strokeDasharray="5 4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9, duration: 0.8 }}
+          />
+
+          {/* linhas de análise — terços */}
+          <motion.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.15, duration: 0.7 }}
+          >
+            <line
+              x1="175"
+              y1="145"
+              x2="300"
+              y2="145"
+              stroke="rgba(203,184,154,0.3)"
+              strokeWidth="0.7"
+              strokeDasharray="3 5"
+            />
+            <line
+              x1="165"
+              y1="250"
+              x2="315"
+              y2="250"
+              stroke="rgba(203,184,154,0.3)"
+              strokeWidth="0.7"
+              strokeDasharray="3 5"
+            />
+            <line
+              x1="160"
+              y1="355"
+              x2="290"
+              y2="355"
+              stroke="rgba(203,184,154,0.3)"
+              strokeWidth="0.7"
+              strokeDasharray="3 5"
+            />
+            <path
+              d="M260 248 L290 220 L305 255"
+              fill="none"
+              stroke="rgba(107,154,144,0.5)"
+              strokeWidth="0.9"
+              strokeDasharray="4 3"
+            />
+          </motion.g>
+
+          {/* pontos de marcação */}
+          <motion.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.3, duration: 0.5 }}
+          >
+            {[
+              [270, 265],
+              [290, 280],
+              [250, 375],
+              [275, 390],
+            ].map(([x, y], i) => (
+              <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r="2.5"
+                fill="#6b9a90"
+                opacity="0.85"
+              />
+            ))}
+          </motion.g>
         </svg>
       </motion.div>
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 to-transparent px-6 pb-8 pt-16 md:px-10 md:pb-10">
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/85 to-transparent px-6 pb-8 pt-16 md:px-10 md:pb-10">
         <p className="text-[10px] uppercase tracking-[0.24em] text-sand">
           {HERO_VISUAL.caption}
         </p>

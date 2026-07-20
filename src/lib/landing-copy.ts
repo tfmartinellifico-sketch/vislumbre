@@ -228,6 +228,6 @@ export const ENTRAR_COPY = {
 } as const;
 
 export const HERO_VISUAL = {
-  caption: "Ilustração de apoio à consulta",
-  note: "Volumes indicativos de conversa — não representam resultado clínico.",
+  caption: "Diagrama de consulta · perfil ¾",
+  note: "Volumes e eixos de análise — linguagem ilustrativa, não resultado clínico.",
 } as const;
