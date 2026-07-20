@@ -5,6 +5,11 @@ import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import type { Mark, ScenarioId } from "@/lib/regions";
 import { SCENARIOS } from "@/lib/regions";
 import { drawIllustrativeVolume } from "@/lib/ethicalRender";
+import {
+  faceWidthPx,
+  markToScreenPosition,
+  smoothPoint,
+} from "@/lib/faceLandmarks";
 
 type Props = {
   marks: Mark[];
@@ -16,7 +21,7 @@ export function ArPreview({ marks, scenario }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const [meshOn, setMeshOn] = useState(true);
+  const [meshOn, setMeshOn] = useState(false);
   const [guideOn, setGuideOn] = useState(true);
   const [faceOk, setFaceOk] = useState(false);
   const [status, setStatus] = useState("Preparando visualização…");
@@ -25,6 +30,7 @@ export function ArPreview({ marks, scenario }: Props) {
   const meshOnRef = useRef(meshOn);
   const guideOnRef = useRef(guideOn);
   const faceOkRef = useRef(false);
+  const smoothRef = useRef<Record<string, { x: number; y: number }>>({});
 
   useEffect(() => {
     marksRef.current = marks;
@@ -91,7 +97,7 @@ export function ArPreview({ marks, scenario }: Props) {
       const ry = h * 0.34;
 
       ctx.save();
-      ctx.fillStyle = "rgba(14, 22, 21, 0.35)";
+      ctx.fillStyle = "rgba(14, 22, 21, 0.28)";
       ctx.beginPath();
       ctx.rect(0, 0, w, h);
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2, true);
@@ -107,7 +113,6 @@ export function ArPreview({ marks, scenario }: Props) {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Cantos
       const arm = Math.min(w, h) * 0.04;
       ctx.strokeStyle = "rgba(203, 184, 154, 0.7)";
       ctx.lineWidth = 2;
@@ -161,40 +166,41 @@ export function ArPreview({ marks, scenario }: Props) {
               setStatus("Rosto alinhado · volumes sobrepostos");
             }
 
-            const xs = face.map((p) => (1 - p.x) * w);
-            const ys = face.map((p) => p.y * h);
-            const minX = Math.min(...xs);
-            const maxX = Math.max(...xs);
-            const minY = Math.min(...ys);
-            const maxY = Math.max(...ys);
-            const faceW = Math.max(1, maxX - minX);
-            const faceH = Math.max(1, maxY - minY);
-
             if (meshOnRef.current) {
               ctx.fillStyle = "rgba(107, 154, 144, 0.4)";
-              for (let i = 0; i < face.length; i += 4) {
+              for (let i = 0; i < face.length; i += 5) {
                 const x = (1 - face[i].x) * w;
                 const y = face[i].y * h;
                 ctx.beginPath();
                 ctx.arc(x, y, 1.1, 0, Math.PI * 2);
                 ctx.fill();
               }
-              ctx.strokeStyle = "rgba(107, 154, 144, 0.5)";
-              ctx.lineWidth = 1.25;
-              ctx.strokeRect(minX, minY, faceW, faceH);
             }
 
             const mult =
               SCENARIOS.find((s) => s.id === scenarioRef.current)?.multiplier ??
               1;
             const warn = scenarioRef.current === "nao_indicado";
+            const faceW = faceWidthPx(face, w);
+            // Intensidade visual proporcional ao rosto, não à largura do vídeo
+            const sizeScale = Math.min(1.15, Math.max(0.45, faceW / 280));
 
             marksRef.current.forEach((mark) => {
-              const x = minX + mark.x * faceW;
-              const y = minY + mark.y * faceH;
-              drawIllustrativeVolume(ctx, x, y, mark.intensity, mult, {
-                warn,
-              });
+              const raw = markToScreenPosition(mark, face, w, h, true);
+              if (!raw) return;
+              const smoothed = smoothPoint(
+                smoothRef.current[mark.id] ?? null,
+                raw,
+              );
+              smoothRef.current[mark.id] = smoothed;
+              drawIllustrativeVolume(
+                ctx,
+                smoothed.x,
+                smoothed.y,
+                mark.intensity * sizeScale,
+                mult,
+                { warn },
+              );
             });
           } else {
             missFrames += 1;
@@ -202,6 +208,7 @@ export function ArPreview({ marks, scenario }: Props) {
               faceOkRef.current = false;
               setFaceOk(false);
               setStatus("Posicione o rosto na moldura");
+              smoothRef.current = {};
             }
             locked = false;
           }
@@ -250,7 +257,7 @@ export function ArPreview({ marks, scenario }: Props) {
 
   return (
     <div className="space-y-2">
-      <div className="relative overflow-hidden rounded-2xl border border-ink/10 bg-ink shadow-[0_24px_60px_-48px_rgba(14,22,21,0.55)]">
+      <div className="relative overflow-hidden rounded-2xl border border-ink/10 bg-ink shadow-[0_24px 60px_-48px_rgba(14,22,21,0.55)]">
         <video ref={videoRef} className="hidden" playsInline muted />
         <canvas ref={canvasRef} className="block w-full" />
         {!ready && (
@@ -261,9 +268,7 @@ export function ArPreview({ marks, scenario }: Props) {
         {ready && (
           <div
             className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] ${
-              faceOk
-                ? "bg-sea/90 text-paper"
-                : "bg-ink/70 text-mist"
+              faceOk ? "bg-sea/90 text-paper" : "bg-ink/70 text-mist"
             }`}
           >
             {faceOk ? "Rosto ok" : "Aguardando rosto"}
