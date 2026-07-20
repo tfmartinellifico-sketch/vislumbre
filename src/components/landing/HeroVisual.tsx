@@ -3,12 +3,12 @@
 import { motion } from "framer-motion";
 import { LogoMark } from "@/components/brand/Logo";
 
+/** Ilustração editorial — rosto legível, volumes só em regiões de consulta. */
 export function HeroVisual() {
   return (
     <div className="relative h-full min-h-[44vh] w-full overflow-hidden lg:min-h-full">
       <div className="absolute inset-0 bg-gradient-to-br from-sea-deep via-[#1a4540] to-ink" />
 
-      {/* grade sutil */}
       <div
         className="absolute inset-0 opacity-[0.12]"
         style={{
@@ -18,7 +18,6 @@ export function HeroVisual() {
         }}
       />
 
-      {/* brilho */}
       <div
         className="absolute inset-0"
         style={{
@@ -43,92 +42,198 @@ export function HeroVisual() {
           aria-hidden
         >
           <defs>
-            <linearGradient id="heroSkin" x1="0.2" y1="0" x2="0.8" y2="1">
-              <stop offset="0%" stopColor="#f5ebe0" />
-              <stop offset="45%" stopColor="#dcc4aa" />
-              <stop offset="100%" stopColor="#b89578" />
+            <linearGradient id="heroSkin" x1="0.25" y1="0" x2="0.75" y2="1">
+              <stop offset="0%" stopColor="#f7ede4" />
+              <stop offset="50%" stopColor="#e8d4c0" />
+              <stop offset="100%" stopColor="#c9a88a" />
+            </linearGradient>
+            <linearGradient id="heroShadow" x1="0.5" y1="0" x2="0.5" y2="1">
+              <stop offset="0%" stopColor="#b89578" stopOpacity="0" />
+              <stop offset="100%" stopColor="#9a7358" stopOpacity="0.22" />
             </linearGradient>
             <linearGradient id="heroVol" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8fb5ac" stopOpacity="0.65" />
-              <stop offset="100%" stopColor="#8fb5ac" stopOpacity="0" />
+              <stop offset="0%" stopColor="#8fb5ac" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#8fb5ac" stopOpacity="0.08" />
             </linearGradient>
-            <filter id="heroGlow">
-              <feGaussianBlur stdDeviation="8" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
+            <radialGradient id="heroCheekL" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#d4b89a" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#d4b89a" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="heroCheekR" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#d4b89a" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#d4b89a" stopOpacity="0" />
+            </radialGradient>
           </defs>
 
-          {/* halo */}
+          {/* halo guia */}
           <ellipse
             cx="200"
-            cy="255"
-            rx="155"
-            ry="200"
+            cy="268"
+            rx="158"
+            ry="198"
             fill="none"
-            stroke="rgba(203,184,154,0.25)"
+            stroke="rgba(203,184,154,0.22)"
             strokeWidth="1"
           />
 
-          {/* rosto */}
-          <ellipse cx="200" cy="255" rx="128" ry="168" fill="url(#heroSkin)" />
+          {/* cabelo / contorno superior */}
+          <path
+            d="M108 210 C112 130, 168 88, 200 82 C232 88, 288 130, 292 210 C285 175, 248 148, 200 145 C152 148, 115 175, 108 210 Z"
+            fill="#3d3028"
+            opacity="0.55"
+          />
 
-          {/* contorno animado */}
+          {/* cabeça */}
+          <path
+            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
+            fill="url(#heroSkin)"
+          />
+          <path
+            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
+            fill="url(#heroShadow)"
+          />
+
+          {/* sombra mandíbula */}
+          <ellipse cx="200" cy="400" rx="72" ry="28" fill="#b89578" opacity="0.12" />
+
+          {/* blush natural */}
+          <ellipse cx="148" cy="268" rx="34" ry="22" fill="url(#heroCheekL)" />
+          <ellipse cx="252" cy="268" rx="34" ry="22" fill="url(#heroCheekR)" />
+
+          {/* sobrancelhas */}
+          <path
+            d="M148 198 Q168 188, 182 192"
+            fill="none"
+            stroke="#6b5344"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            opacity="0.55"
+          />
+          <path
+            d="M218 192 Q232 188, 252 198"
+            fill="none"
+            stroke="#6b5344"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            opacity="0.55"
+          />
+
+          {/* olhos — formato definido, sem blur */}
+          <g opacity="0.88">
+            <ellipse cx="165" cy="222" rx="18" ry="11" fill="#faf8f5" />
+            <ellipse cx="235" cy="222" rx="18" ry="11" fill="#faf8f5" />
+            <ellipse cx="166" cy="223" rx="9" ry="9" fill="#4a4038" />
+            <ellipse cx="236" cy="223" rx="9" ry="9" fill="#4a4038" />
+            <circle cx="169" cy="220" r="2.5" fill="#fafcfb" opacity="0.9" />
+            <circle cx="239" cy="220" r="2.5" fill="#fafcfb" opacity="0.9" />
+          </g>
+
+          {/* nariz suave */}
+          <path
+            d="M200 228 L192 268 Q200 274, 208 268 Z"
+            fill="#c9a88a"
+            opacity="0.35"
+          />
+          <path
+            d="M200 228 Q196 252, 194 268 M200 228 Q204 252, 206 268"
+            fill="none"
+            stroke="#9a7358"
+            strokeWidth="1"
+            opacity="0.35"
+            strokeLinecap="round"
+          />
+
+          {/* lábios */}
+          <path
+            d="M178 318 Q200 332, 222 318 Q200 326, 178 318 Z"
+            fill="#c4847a"
+            opacity="0.55"
+          />
+          <path
+            d="M178 318 Q200 324, 222 318"
+            fill="none"
+            stroke="#a66b62"
+            strokeWidth="1"
+            opacity="0.45"
+          />
+
+          {/* orelhas discretas */}
+          <ellipse cx="112" cy="258" rx="10" ry="18" fill="#dfc4ad" opacity="0.85" />
+          <ellipse cx="288" cy="258" rx="10" ry="18" fill="#dfc4ad" opacity="0.85" />
+
+          {/* contorno */}
           <path
             className="contour-draw"
-            d="M118 145 C138 95, 262 95, 282 145 C305 210, 310 310, 285 385 C255 455, 145 455, 115 385 C90 310, 95 210, 118 145 Z"
+            d="M118 175 C125 115, 168 92, 200 90 C232 92, 275 115, 282 175 C292 235, 295 310, 278 375 C258 430, 218 448, 200 452 C182 448, 142 430, 122 375 C105 310, 108 235, 118 175 Z"
             fill="none"
-            stroke="rgba(250,252,251,0.55)"
-            strokeWidth="1.5"
+            stroke="rgba(250,252,251,0.35)"
+            strokeWidth="1.2"
           />
 
-          {/* volumes */}
+          {/* volumes de consulta (malar / sulco) — tracejados, fora dos olhos/boca */}
           <motion.ellipse
-            cx="158"
-            cy="228"
-            rx="38"
-            ry="28"
+            cx="148"
+            cy="278"
+            rx="36"
+            ry="26"
             fill="url(#heroVol)"
-            filter="url(#heroGlow)"
-            initial={{ opacity: 0, scale: 0.9 }}
+            stroke="rgba(107,154,144,0.55)"
+            strokeWidth="1.2"
+            strokeDasharray="5 4"
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.9, duration: 0.8 }}
+            transition={{ delay: 0.85, duration: 0.7 }}
           />
           <motion.ellipse
-            cx="242"
-            cy="228"
-            rx="38"
-            ry="28"
+            cx="252"
+            cy="278"
+            rx="36"
+            ry="26"
             fill="url(#heroVol)"
-            filter="url(#heroGlow)"
-            initial={{ opacity: 0, scale: 0.9 }}
+            stroke="rgba(107,154,144,0.55)"
+            strokeWidth="1.2"
+            strokeDasharray="5 4"
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 1.05, duration: 0.8 }}
+            transition={{ delay: 0.95, duration: 0.7 }}
           />
           <motion.ellipse
             cx="200"
-            cy="318"
-            rx="58"
-            ry="22"
+            cy="348"
+            rx="52"
+            ry="18"
             fill="url(#heroVol)"
-            opacity="0.85"
+            stroke="rgba(107,154,144,0.45)"
+            strokeWidth="1"
+            strokeDasharray="4 3"
+            opacity="0.75"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.85 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
+            animate={{ opacity: 0.75 }}
+            transition={{ delay: 1.05, duration: 0.7 }}
           />
 
-          {/* linhas de análise */}
+          {/* linhas de análise — terço médio */}
           <motion.path
-            d="M158 228 L200 200 L242 228"
+            d="M148 278 L200 248 L252 278"
             fill="none"
-            stroke="rgba(107,154,144,0.5)"
-            strokeWidth="0.8"
+            stroke="rgba(107,154,144,0.45)"
+            strokeWidth="0.9"
             strokeDasharray="4 3"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ delay: 1.4, duration: 1.2 }}
+            transition={{ delay: 1.2, duration: 1 }}
+          />
+          <motion.line
+            x1="118"
+            y1="248"
+            x2="282"
+            y2="248"
+            stroke="rgba(203,184,154,0.35)"
+            strokeWidth="0.7"
+            strokeDasharray="3 4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.35, duration: 0.6 }}
           />
         </svg>
       </motion.div>

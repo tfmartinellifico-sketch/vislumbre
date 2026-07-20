@@ -110,26 +110,97 @@ function ArDiagram() {
   return (
     <div className="overflow-hidden rounded-2xl border border-paper/10 bg-paper/[0.04]">
       <div className="relative aspect-[4/5] max-h-[480px] bg-gradient-to-b from-sea-deep to-ink">
-        {/* moldura tipo celular */}
-        <div className="absolute inset-6 rounded-[1.75rem] border border-paper/15 bg-ink/40 overflow-hidden">
-          {/* rosto esquemático */}
+        <div className="absolute inset-6 overflow-hidden rounded-[1.75rem] border border-paper/15 bg-ink/40">
           <svg
             viewBox="0 0 280 360"
             className="absolute inset-0 h-full w-full"
             aria-hidden
           >
             <defs>
-              <radialGradient id="arVol" cx="50%" cy="45%" r="50%">
-                <stop offset="0%" stopColor="#7aa39a" stopOpacity="0.5" />
+              <linearGradient id="arSkin" x1="0.3" y1="0" x2="0.7" y2="1">
+                <stop offset="0%" stopColor="#f0e2d4" />
+                <stop offset="100%" stopColor="#d4b89a" />
+              </linearGradient>
+              <radialGradient id="arVol" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#7aa39a" stopOpacity="0.4" />
                 <stop offset="100%" stopColor="#7aa39a" stopOpacity="0" />
               </radialGradient>
             </defs>
-            <ellipse cx="140" cy="175" rx="72" ry="95" fill="#e2cbb4" opacity="0.35" />
-            {/* volumes AR */}
-            <ellipse cx="108" cy="165" rx="28" ry="20" fill="url(#arVol)" />
-            <ellipse cx="172" cy="165" rx="28" ry="20" fill="url(#arVol)" />
-            <ellipse cx="140" cy="215" rx="40" ry="16" fill="url(#arVol)" opacity="0.7" />
-            {/* moldura guia */}
+
+            <path
+              d="M88 130 C92 88, 118 72, 140 68 C162 72, 188 88, 192 130 C198 175, 200 230, 188 275 C175 310, 155 320, 140 322 C125 320, 105 310, 92 275 C80 230, 82 175, 88 130 Z"
+              fill="url(#arSkin)"
+              opacity="0.9"
+            />
+
+            <path
+              d="M118 118 Q128 112, 138 116"
+              fill="none"
+              stroke="#6b5344"
+              strokeWidth="1.5"
+              opacity="0.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M142 116 Q152 112, 162 118"
+              fill="none"
+              stroke="#6b5344"
+              strokeWidth="1.5"
+              opacity="0.5"
+              strokeLinecap="round"
+            />
+
+            <ellipse cx="128" cy="138" rx="10" ry="6" fill="#faf8f5" opacity="0.9" />
+            <ellipse cx="152" cy="138" rx="10" ry="6" fill="#faf8f5" opacity="0.9" />
+            <circle cx="129" cy="139" r="4" fill="#4a4038" />
+            <circle cx="153" cy="139" r="4" fill="#4a4038" />
+
+            <path
+              d="M140 148 L136 168 Q140 172, 144 168 Z"
+              fill="#c9a88a"
+              opacity="0.35"
+            />
+            <path
+              d="M132 188 Q140 194, 148 188"
+              fill="none"
+              stroke="#c4847a"
+              strokeWidth="1.2"
+              opacity="0.5"
+              strokeLinecap="round"
+            />
+
+            <ellipse
+              cx="112"
+              cy="178"
+              rx="22"
+              ry="16"
+              fill="url(#arVol)"
+              stroke="#6b9a90"
+              strokeWidth="0.8"
+              strokeDasharray="4 3"
+            />
+            <ellipse
+              cx="168"
+              cy="178"
+              rx="22"
+              ry="16"
+              fill="url(#arVol)"
+              stroke="#6b9a90"
+              strokeWidth="0.8"
+              strokeDasharray="4 3"
+            />
+            <ellipse
+              cx="140"
+              cy="218"
+              rx="32"
+              ry="12"
+              fill="url(#arVol)"
+              stroke="#6b9a90"
+              strokeWidth="0.7"
+              strokeDasharray="3 3"
+              opacity="0.65"
+            />
+
             <ellipse
               cx="140"
               cy="175"
@@ -140,7 +211,7 @@ function ArDiagram() {
               strokeWidth="1.2"
               strokeDasharray="5 4"
             />
-            {/* mesh points */}
+
             {[...Array(12)].map((_, i) => {
               const a = (i / 12) * Math.PI * 2;
               const x = 140 + Math.cos(a) * 55;
@@ -152,7 +223,7 @@ function ArDiagram() {
                   cy={y}
                   r="1.5"
                   fill="#6b9a90"
-                  opacity="0.6"
+                  opacity="0.55"
                 />
               );
             })}
