@@ -145,9 +145,26 @@ export function AdminPanel() {
       </div>
 
       {user && !isAdmin && (
-        <p className="rounded-xl border border-warn/30 bg-warn/[0.05] px-4 py-3 text-[14px] text-warn">
-          Você está logado, mas este e-mail não é administrador. Adicione-o em
-          NEXT_PUBLIC_ADMIN_EMAILS na Vercel e faça redeploy.
+        <div className="max-w-xl space-y-2 rounded-xl border border-warn/30 bg-warn/[0.05] px-4 py-4 text-[14px] text-warn">
+          <p className="font-medium">Este e-mail ainda não é administrador.</p>
+          <p className="text-[13px] leading-relaxed text-ink-soft">
+            Na Vercel, defina{" "}
+            <code className="text-[12px]">NEXT_PUBLIC_ADMIN_EMAILS</code> e{" "}
+            <code className="text-[12px]">ADMIN_EMAILS</code> com este mesmo
+            e-mail, faça redeploy e entre de novo em{" "}
+            <Link href="/admin" className="text-sea-deep underline">
+              /admin
+            </Link>
+            . Guia: docs/operacao-plataforma.md (seção “Como virar admin”).
+          </p>
+        </div>
+      )}
+
+      {!user && (
+        <p className="mt-4 max-w-md text-[13px] leading-relaxed text-ink-soft">
+          Entre com o e-mail cadastrado em ADMIN_EMAILS na Vercel. Não há
+          formulário separado de “criar admin” — a permissão vem da variável de
+          ambiente.
         </p>
       )}
 

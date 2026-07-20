@@ -219,40 +219,62 @@ export const DIFERENCA_COPY = {
 export const ENTRAR_COPY = {
   title: "Área do cliente",
   inviteIntro: (clinic: string, email: string) =>
-    `Convite para ${clinic}. Autentique-se com o e-mail ${email} para vincular sua conta.`,
+    `Você foi convidado(a) para ${clinic}. Entre ou crie a conta com o e-mail ${email} e aceite o convite abaixo.`,
   defaultIntro:
-    "Entrada para clínicas e profissionais com acesso já liberado. Se ainda não tem conta, solicite a demonstração ou aguarde o convite enviado pela equipe Vislumbre.",
-  inviteButton: "Aceitar convite e vincular conta",
-  pendingTitle: "Aguardando liberação",
+    "Para clínicas e profissionais com acesso já liberado. Se ainda não recebeu o convite, solicite a demonstração no site.",
+  inviteButton: "Aceitar convite e continuar",
+  pendingTitle: "Ainda sem acesso vinculado",
   pendingBody:
-    "Sua conta está autenticada, mas ainda não há clínica vinculada. Solicite o ambiente de demonstração ou aceite o convite recebido por e-mail.",
+    "Sua conta existe, mas ainda não está ligada a uma clínica. Use o link do e-mail de convite ou solicite a demonstração.",
   pendingCta: "Solicitar demonstração",
 } as const;
 
 export const DEMO_COPY = {
-  eyebrow: "Ambiente de demonstração",
-  title: "Conheça o Vislumbre antes de contratar",
+  eyebrow: "Demonstração para clínicas",
+  title: "Experimente o Vislumbre na sua rotina de consulta",
   intro:
-    "O ambiente de demonstração é liberado sob demanda para clínicas e profissionais interessados. Você solicita o acesso; a equipe Vislumbre avalia e envia o convite por e-mail.",
+    "Solicite um acesso de avaliação. Em poucos passos você percorre o fluxo completo — do registro fotográfico aos cenários e à exportação — com a mesma lógica usada na mesa de atendimento.",
   points: [
-    "Acesso supervisionado à ferramenta de consulta (registro, cenários, ao vivo e exportação).",
-    "Não substitui a área do cliente: planos, equipe e billing ficam no painel após contratação.",
-    "Imagens de pacientes permanecem no aparelho; o ambiente demo usa faces educativas.",
+    "Percorra o fluxo real da ferramenta: foto, análise, cenários, visualização ao vivo e registro.",
+    "Use faces educativas no ambiente de avaliação — dados de pacientes ficam só no aparelho da clínica.",
+    "Quando fizer sentido contratar, a equipe ativa o painel completo da clínica (equipe, plano e histórico).",
   ],
-  formTitle: "Solicitar acesso à demonstração",
+  howTitle: "Como funciona",
+  howSteps: [
+    {
+      n: "1",
+      t: "Envie seus dados",
+      d: "Nome, e-mail profissional e clínica ou empresa.",
+    },
+    {
+      n: "2",
+      t: "Aguarde o convite",
+      d: "A equipe Vislumbre analisa o pedido e envia um e-mail com o link de acesso.",
+    },
+    {
+      n: "3",
+      t: "Entre e explore",
+      d: "Abra o link, crie sua senha e use a ferramenta. Depois, o painel da clínica fica em /clinica.",
+    },
+  ],
+  formTitle: "Pedir acesso à demonstração",
   formIntro:
-    "Informe nome, e-mail profissional e empresa. Após a liberação no painel admin, você recebe o convite para criar a senha.",
-  formSubmit: "Enviar solicitação",
+    "Preencha os campos. Assim que o acesso for liberado, você recebe um e-mail com o link para criar a senha e entrar.",
+  formSubmit: "Enviar pedido",
   formBusy: "Enviando…",
-  formErrorUnavailable: "Formulário indisponível no momento. Contate o suporte.",
-  formErrorSend: "Não foi possível enviar. Tente novamente.",
-  successTitle: "Solicitação recebida",
+  formErrorUnavailable: "Formulário indisponível no momento. Fale conosco pelo contato do site.",
+  formErrorSend: "Não foi possível enviar. Tente novamente em instantes.",
+  successTitle: "Pedido enviado",
   successBody:
-    "A equipe Vislumbre analisará o pedido e liberará o ambiente de demonstração. Você receberá um e-mail com o link de acesso.",
-  privacy: "Usamos estes dados apenas para liberar o acesso e contato comercial.",
+    "Em breve você recebe um e-mail da Vislumbre com o link de acesso. Abra o link, crie sua senha e entre na ferramenta. Se já tiver conta, use a área do cliente com o mesmo e-mail do pedido.",
+  successEnter: "Já recebi o convite — entrar",
+  privacy: "Usamos estes dados para liberar o acesso e contato comercial. Sem spam.",
+  alreadyAccess: "Já tem acesso liberado?",
+  alreadyAccessCta: "Entrar na área do cliente",
   form: {
-    errorUnavailable: "Formulário indisponível no momento. Contate o suporte.",
-    errorSend: "Não foi possível enviar. Tente novamente.",
+    errorUnavailable:
+      "Formulário indisponível no momento. Fale conosco pelo contato do site.",
+    errorSend: "Não foi possível enviar. Tente novamente em instantes.",
   },
 } as const;
 

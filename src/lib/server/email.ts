@@ -69,15 +69,20 @@ export async function sendInviteEmail(input: {
   await resend.emails.send({
     from: emailFrom(),
     to: input.to,
-    subject: `Convite Vislumbre — ${input.clinicName}`,
+    subject: `Seu acesso ao Vislumbre — ${input.clinicName}`,
     text: [
-      `Você foi convidado(a) para a clínica ${input.clinicName} no Vislumbre.`,
-      `Papel: ${input.role}`,
+      `Olá,`,
       ``,
-      `Abra o link para criar sua senha e entrar:`,
+      `Seu acesso à clínica ${input.clinicName} no Vislumbre está liberado.`,
+      ``,
+      `1. Abra o link abaixo`,
+      `2. Crie sua senha (ou entre, se já tiver conta) com este e-mail`,
+      `3. Aceite o convite na tela`,
+      `4. Use a ferramenta em ${publicAppUrl()}/consulta e o painel em ${publicAppUrl()}/clinica`,
+      ``,
       input.inviteUrl,
       ``,
-      `Se não esperava este e-mail, ignore.`,
+      `Se não solicitou este acesso, ignore este e-mail.`,
     ].join("\n"),
   });
   return { sent: true as const };

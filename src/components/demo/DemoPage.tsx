@@ -31,7 +31,7 @@ export function DemoPage() {
         clinic: company,
         source: "demo",
         requestDemo: true,
-        message: "Solicitação de acesso ao ambiente de demonstração.",
+        message: "Pedido de demonstração pelo site.",
       });
       setDone(true);
     } catch {
@@ -47,13 +47,15 @@ export function DemoPage() {
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <Logo href="/" size="md" />
           <Link href="/entrar" className="text-[13px] text-sea-deep">
-            Área do cliente
+            {DEMO_COPY.alreadyAccessCta}
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-5 py-14">
-        <p className="text-[11px] uppercase tracking-[0.24em] text-sea">{DEMO_COPY.eyebrow}</p>
+        <p className="text-[11px] uppercase tracking-[0.24em] text-sea">
+          {DEMO_COPY.eyebrow}
+        </p>
         <h1 className="display mt-3 text-4xl tracking-tight text-ink md:text-5xl">
           {DEMO_COPY.title}
         </h1>
@@ -67,6 +69,24 @@ export function DemoPage() {
           ))}
         </ul>
 
+        <div className="mt-10">
+          <h2 className="display text-2xl tracking-tight">{DEMO_COPY.howTitle}</h2>
+          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+            {DEMO_COPY.howSteps.map((step) => (
+              <li
+                key={step.n}
+                className="rounded-xl border border-ink/10 bg-paper px-4 py-4"
+              >
+                <span className="display text-2xl text-sea-soft">{step.n}</span>
+                <p className="mt-2 text-[14px] font-medium text-ink">{step.t}</p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-soft">
+                  {step.d}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </div>
+
         <div className="mt-12 rounded-2xl border border-ink/10 bg-paper p-6 md:p-8">
           <h2 className="display text-2xl tracking-tight">{DEMO_COPY.formTitle}</h2>
           <p className="mt-2 text-[14px] text-ink-soft">{DEMO_COPY.formIntro}</p>
@@ -77,14 +97,22 @@ export function DemoPage() {
               <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
                 {DEMO_COPY.successBody}
               </p>
-              <Link href="/" className="btn-primary mt-6 inline-flex !rounded-full">
-                Voltar ao site
-              </Link>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <Link href="/entrar" className="btn-primary !rounded-full">
+                  {DEMO_COPY.successEnter}
+                </Link>
+                <Link
+                  href="/"
+                  className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]"
+                >
+                  Voltar ao site
+                </Link>
+              </div>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="mt-6 space-y-4">
               <label className="block text-[12px] text-ink-soft">
-                Nome
+                Seu nome
                 <input
                   required
                   value={name}
@@ -103,7 +131,7 @@ export function DemoPage() {
                 />
               </label>
               <label className="block text-[12px] text-ink-soft">
-                Empresa / clínica
+                Clínica ou empresa
                 <input
                   required
                   value={company}
@@ -125,9 +153,9 @@ export function DemoPage() {
         </div>
 
         <p className="mt-10 text-center text-[13px] text-ink-soft">
-          Já tem acesso liberado?{" "}
+          {DEMO_COPY.alreadyAccess}{" "}
           <Link href="/entrar" className="text-sea-deep underline">
-            Entrar na área do cliente
+            {DEMO_COPY.alreadyAccessCta}
           </Link>
         </p>
       </main>
