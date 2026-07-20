@@ -1,9 +1,15 @@
 import type { Mark, RegionId } from "./regions";
+import type { LandmarkPoint } from "./faceLandmarks";
+import {
+  regionNormalizedPosition,
+  sideFromTemplateX,
+} from "./faceLandmarks";
 
 export type ProcedureTemplate = {
   id: string;
   label: string;
   description: string;
+  /** x/y só indicam lado (esquerda/direita) e ordem; a posição real vem do rosto. */
   points: { region: RegionId; x: number; y: number; intensity: number }[];
   suggestedNotes: string;
 };
@@ -78,6 +84,7 @@ export const PROCEDURE_TEMPLATES: ProcedureTemplate[] = [
   },
 ];
 
+/** Fallback sem face detectada — evita crash, mas posições são genéricas. */
 export function marksFromTemplate(template: ProcedureTemplate): Mark[] {
   const stamp = Date.now();
   return template.points.map((p, i) => ({
@@ -87,4 +94,28 @@ export function marksFromTemplate(template: ProcedureTemplate): Mark[] {
     y: p.y,
     intensity: p.intensity,
   }));
+}
+
+/** Roteiro ancorado nos landmarks do rosto da foto. */
+export function marksFromTemplateOnFace(
+  template: ProcedureTemplate,
+  face: LandmarkPoint[],
+): Mark[] {
+  const stamp = Date.now();
+  const marks: Mark[] = [];
+
+  template.points.forEach((p, i) => {
+    const side = sideFromTemplateX(p.region, p.x);
+    const pos = regionNormalizedPosition(face, p.region, side);
+    if (!pos) return;
+    marks.push({
+      id: `${stamp}-tpl-${i}`,
+      region: p.region,
+      x: pos.x,
+      y: pos.y,
+      intensity: p.intensity,
+    });
+  });
+
+  return marks;
 }

@@ -48,9 +48,11 @@ import {
   type Vector,
 } from "@/lib/planning";
 import {
-  marksFromTemplate,
+  marksFromTemplateOnFace,
   PROCEDURE_TEMPLATES,
 } from "@/lib/templates";
+import { detectFaceLandmarks } from "@/lib/detectFace";
+import type { LandmarkPoint } from "@/lib/faceLandmarks";
 import {
   consumeReopenConsulta,
   hasSeenOnboarding,
@@ -98,6 +100,11 @@ export function ConsultaApp() {
   const [present, setPresent] = useState(false);
   const [presentCompare, setPresentCompare] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const [faceLandmarks, setFaceLandmarks] = useState<LandmarkPoint[] | null>(
+    null,
+  );
+  const [templateBusy, setTemplateBusy] = useState(false);
+  const [templateError, setTemplateError] = useState<string | null>(null);
   const [cenarioView, setCenarioView] = useState<"triplo" | "dual" | "morph">(
     "triplo",
   );
@@ -327,13 +334,63 @@ export function ConsultaApp() {
     );
   }
 
-  function applyTemplate(id: string) {
+  useEffect(() => {
+    if (!imageUrl) {
+      setFaceLandmarks(null);
+      return;
+    }
+    let cancelled = false;
+    setTemplateError(null);
+    detectFaceLandmarks(imageUrl)
+      .then((face) => {
+        if (!cancelled) setFaceLandmarks(face);
+      })
+      .catch(() => {
+        if (!cancelled) setFaceLandmarks(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [imageUrl]);
+
+  async function applyTemplate(id: string) {
     const tpl = PROCEDURE_TEMPLATES.find((t) => t.id === id);
     if (!tpl) return;
-    setMarks(marksFromTemplate(tpl));
-    setActiveTemplate(id);
-    setNotes((prev) => prev || tpl.suggestedNotes);
-    setStep("marcar");
+    if (!imageUrl) {
+      setTemplateError("Envie a foto frontal antes de aplicar um roteiro.");
+      return;
+    }
+
+    setTemplateBusy(true);
+    setTemplateError(null);
+    try {
+      let face = faceLandmarks;
+      if (!face) {
+        face = await detectFaceLandmarks(imageUrl);
+        setFaceLandmarks(face);
+      }
+      if (!face?.length) {
+        setTemplateError(
+          "Não encontrei um rosto nítido na foto. Use frontal, bem iluminada e tente de novo.",
+        );
+        return;
+      }
+      const next = marksFromTemplateOnFace(tpl, face);
+      if (!next.length) {
+        setTemplateError("Não consegui ancorar as regiões neste rosto.");
+        return;
+      }
+      setMarks(next);
+      setActiveTemplate(id);
+      setNotes((prev) => prev || tpl.suggestedNotes);
+      setStep("marcar");
+    } catch {
+      setTemplateError(
+        "Falha ao localizar o rosto. Verifique a conexão e tente novamente.",
+      );
+    } finally {
+      setTemplateBusy(false);
+    }
   }
 
   function resetSession() {
@@ -350,6 +407,8 @@ export function ConsultaApp() {
     setAccepted(false);
     setPatientAck(false);
     setActiveTemplate(null);
+    setFaceLandmarks(null);
+    setTemplateError(null);
     setPresent(false);
     setCenarioView("triplo");
     setPreference(null);
@@ -822,8 +881,9 @@ export function ConsultaApp() {
                       key={tpl.id}
                       type="button"
                       title={tpl.description}
+                      disabled={templateBusy || !imageUrl}
                       onClick={() => applyTemplate(tpl.id)}
-                      className={`rounded-lg px-2.5 py-1.5 text-[11px] ${
+                      className={`rounded-lg px-2.5 py-1.5 text-[11px] disabled:opacity-50 ${
                         activeTemplate === tpl.id
                           ? "bg-sea-deep text-paper"
                           : "border border-ink/10 text-ink-soft hover:border-sea/40"
@@ -834,8 +894,15 @@ export function ConsultaApp() {
                   ))}
                 </div>
                 <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
-                  Mapas genéricos para iniciar. Ajuste sempre na foto real.
+                  {templateBusy
+                    ? "Alinhando roteiro ao rosto da foto…"
+                    : "Roteiros ancorados no rosto detectado. Ajuste se precisar."}
                 </p>
+                {templateError && (
+                  <p className="mt-2 text-[12px] leading-relaxed text-warn">
+                    {templateError}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-1.5">

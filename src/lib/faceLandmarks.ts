@@ -13,13 +13,49 @@ export const REGION_ANCHORS: Record<
 > = {
   // Maçã do rosto / zigoma medial — evita 234/454 (borda perto da orelha)
   malar: { left: [116, 123, 50], right: [345, 352, 280] },
-  olheira: { left: [111, 31, 228], right: [340, 261, 448] },
+  olheira: { left: [145, 111, 226], right: [374, 340, 446] },
   sulco: { left: [205, 187, 92], right: [425, 411, 322] },
   labios: { center: [13, 14, 0] },
   mento: { center: [152, 377, 148] },
   mandibula: { left: [172, 136, 150], right: [397, 365, 379] },
-  temple: { left: [21, 54, 103], right: [251, 284, 332] },
+  temple: { left: [103, 67, 109], right: [332, 297, 338] },
 };
+
+export type FaceSide = "left" | "right" | "center";
+
+/** Posição normalizada (0–1) na foto, sem espelho — para FaceCanvas / roteiros. */
+export function regionNormalizedPosition(
+  face: LandmarkPoint[],
+  region: RegionId,
+  side: FaceSide,
+): { x: number; y: number } | null {
+  const anchors = REGION_ANCHORS[region];
+  let point: LandmarkPoint | null = null;
+
+  if (side === "center") {
+    if (!anchors.center?.length) return null;
+    point = averageLandmarks(face, anchors.center);
+  } else if (side === "left" && anchors.left?.length) {
+    point = averageLandmarks(face, anchors.left);
+  } else if (side === "right" && anchors.right?.length) {
+    point = averageLandmarks(face, anchors.right);
+  } else if (anchors.center?.length) {
+    point = averageLandmarks(face, anchors.center);
+  }
+
+  if (!point) return null;
+  return { x: point.x, y: point.y };
+}
+
+export function sideFromTemplateX(
+  region: RegionId,
+  x: number,
+): FaceSide {
+  const anchors = REGION_ANCHORS[region];
+  if (anchors.center?.length && !anchors.left) return "center";
+  if (x < 0.5) return "left";
+  return "right";
+}
 
 function averageLandmarks(
   face: LandmarkPoint[],
