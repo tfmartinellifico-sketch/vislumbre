@@ -15,14 +15,22 @@ import { APP_COPY } from "@/lib/app-copy";
 
 type Props = {
   onUserChange: (user: User | null) => void;
+  /** Abre direto em criar conta (ex.: primeiro acesso admin). */
+  defaultMode?: "login" | "signup";
+  /** Texto de ajuda acima do formulário. */
+  hint?: string;
 };
 
-export function FirebaseAccount({ onUserChange }: Props) {
+export function FirebaseAccount({
+  onUserChange,
+  defaultMode = "login",
+  hint,
+}: Props) {
   const ac = APP_COPY.account;
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(defaultMode);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -104,6 +112,9 @@ export function FirebaseAccount({ onUserChange }: Props) {
 
   return (
     <div className="rounded-lg border border-ink/10 bg-paper/90 p-4">
+      {hint && (
+        <p className="mb-4 text-[13px] leading-relaxed text-ink-soft">{hint}</p>
+      )}
       <div className="flex gap-2">
         {(["login", "signup"] as const).map((item) => (
           <button
@@ -118,6 +129,12 @@ export function FirebaseAccount({ onUserChange }: Props) {
           </button>
         ))}
       </div>
+      {mode === "signup" && (
+        <p className="mt-3 text-[12px] leading-relaxed text-sea-deep">
+          Na primeira vez, escolha uma senha (mín. 6 caracteres). Depois use a
+          aba Entrar com a mesma senha.
+        </p>
+      )}
       <div className="mt-4 space-y-3">
         <input
           type="email"

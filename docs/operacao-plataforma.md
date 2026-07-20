@@ -29,8 +29,10 @@ Não existe “cadastro de admin” no site. O admin é o e-mail que você coloc
    Isso habilita `/api/admin/bootstrap` (custom claim `admin: true`).
 3. Faça **Redeploy**.
 4. Abra **https://vislumbre.me/admin**
-5. Em **Criar conta** / **Entrar**, use **exatamente** o e-mail da variável.
-6. Na primeira vez, o sistema grava o doc de admin; as abas Leads / Clínicas / etc. aparecem.
+5. Em **Criar conta**, use **exatamente** o e-mail da variável e **invente uma senha** (mín. 6 caracteres).  
+   Colocar o e-mail em `ADMIN_EMAILS` **não cria senha** — a senha nasce nessa primeira conta Firebase.
+6. Nas próximas vezes, use a aba **Entrar** com a mesma senha (ou **Recuperar senha**).
+7. Na primeira vez logado, o sistema grava o doc de admin; as abas Leads / Clínicas / etc. aparecem.
 
 Sem isso, `/admin` mostra só a tela de login e “sem permissão”.
 

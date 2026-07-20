@@ -141,7 +141,11 @@ export function AdminPanel() {
       </div>
 
       <div className="mb-8 max-w-md">
-        <FirebaseAccount onUserChange={setUser} />
+        <FirebaseAccount
+          onUserChange={setUser}
+          defaultMode="signup"
+          hint="O e-mail em ADMIN_EMAILS na Vercel só define quem é admin. A senha não existe ainda: use Criar conta com esse mesmo e-mail e invente uma senha agora."
+        />
       </div>
 
       {user && !isAdmin && (
@@ -161,11 +165,20 @@ export function AdminPanel() {
       )}
 
       {!user && (
-        <p className="mt-4 max-w-md text-[13px] leading-relaxed text-ink-soft">
-          Entre com o e-mail cadastrado em ADMIN_EMAILS na Vercel. Não há
-          formulário separado de “criar admin” — a permissão vem da variável de
-          ambiente.
-        </p>
+        <ol className="mt-2 max-w-md list-decimal space-y-2 pl-5 text-[13px] leading-relaxed text-ink-soft">
+          <li>
+            Confirme na Vercel que{" "}
+            <code className="text-[12px]">ADMIN_EMAILS</code> tem o seu e-mail.
+          </li>
+          <li>
+            Acima, na aba <strong className="text-ink">Criar conta</strong>, use
+            esse e-mail e uma senha nova (mín. 6 caracteres).
+          </li>
+          <li>
+            Se a conta já existir, use <strong className="text-ink">Entrar</strong>{" "}
+            ou <strong className="text-ink">Recuperar senha</strong>.
+          </li>
+        </ol>
       )}
 
       {isAdmin && (
