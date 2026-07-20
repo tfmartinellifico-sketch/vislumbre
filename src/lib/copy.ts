@@ -19,9 +19,9 @@ export const STEPS_UI = [
     label: "Captura",
     title: "Captura",
     subtitle:
-      "Foto frontal bem iluminada. O rosto é detectado para montar a mesa 3D.",
-    coach: "Carregue a foto frontal (ou use a face educativa) para continuar.",
-    checklist: ["Foto frontal carregada", "Rosto detectável na imagem"],
+      "Preferência: scan do Sense (OBJ/PLY). Foto frontal continua como alternativa.",
+    coach: "Importe o scan 3D do Sense ou uma foto frontal para continuar.",
+    checklist: ["Scan Sense ou foto frontal", "Arquivo legível para a mesa"],
     tone: {
       chip: "bg-[#2f5f58] text-paper",
       bar: "bg-[#2f5f58]",
@@ -35,8 +35,8 @@ export const STEPS_UI = [
     label: "Mesa",
     title: "Mesa 3D",
     subtitle:
-      "Rosto em volume para a conversa. Roteiro, intensidade e giro — sem parecer o resultado.",
-    coach: "Aplique um roteiro e gire o rosto. Ajuste o cenário com a paciente.",
+      "Malha do Sense (ou foto) para a conversa. Roteiro, intensidade e giro.",
+    coach: "Aplique um roteiro e gire o modelo. Ajuste o cenário com a paciente.",
     checklist: ["Roteiro ou marcas no rosto", "Cenário escolhido na mesa"],
     tone: {
       chip: "bg-[#4a7c74] text-paper",
@@ -50,8 +50,7 @@ export const STEPS_UI = [
     id: "exportar",
     label: "Registro",
     title: "Registro da sessão",
-    subtitle:
-      "Avisos obrigatórios, PDF e histórico da clínica.",
+    subtitle: "Avisos obrigatórios, PDF e histórico da clínica.",
     coach: "Confirme os avisos e exporte o PDF.",
     checklist: ["Avisos aceitos", "PDF gerado e sessão salva"],
     tone: {
@@ -69,9 +68,9 @@ export type StepId = (typeof STEPS_UI)[number]["id"];
 /** Pode avançar a partir da etapa atual? */
 export function canLeaveStep(
   stepId: StepId,
-  ctx: { hasFrontImage: boolean; markCount: number },
+  ctx: { hasFrontImage: boolean; hasScan: boolean; markCount: number },
 ): boolean {
-  if (stepId === "foto") return ctx.hasFrontImage;
+  if (stepId === "foto") return ctx.hasFrontImage || ctx.hasScan;
   if (stepId === "mesa") return ctx.markCount > 0;
   return true;
 }
@@ -79,7 +78,7 @@ export function canLeaveStep(
 /** Pode ir para o índice alvo (só passos já liberados em sequência)? */
 export function canJumpToStep(
   targetIndex: number,
-  ctx: { hasFrontImage: boolean; markCount: number },
+  ctx: { hasFrontImage: boolean; hasScan: boolean; markCount: number },
 ): boolean {
   if (targetIndex <= 0) return true;
   for (let i = 0; i < targetIndex; i++) {

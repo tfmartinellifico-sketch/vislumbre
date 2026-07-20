@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { FaceCanvas } from "./FaceCanvas";
 import { FaceMesh3D } from "./FaceMesh3D";
+import { ScanMesh3D } from "./ScanMesh3D";
 import { Onboarding } from "./Onboarding";
 import { PresentMode } from "./PresentMode";
 import { GuidedCapture } from "./GuidedCapture";
@@ -32,6 +33,7 @@ import {
 } from "@/lib/demoFace";
 import { SCRIPT_LINES, TOPIC_CHECKS, type Vector } from "@/lib/planning";
 import {
+  marksFromTemplate,
   marksFromTemplateOnFace,
   PROCEDURE_TEMPLATES,
 } from "@/lib/templates";
@@ -62,6 +64,8 @@ export function ConsultaApp() {
   const [step, setStep] = useState<StepId>("foto");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
+  const [scanUrl, setScanUrl] = useState<string | null>(null);
+  const [scanName, setScanName] = useState<string | null>(null);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [vectors] = useState<Vector[]>([]);
   const [scenario, setScenario] = useState<ScenarioId>("conservador");
@@ -100,6 +104,7 @@ export function ConsultaApp() {
   const stepMeta = STEPS_UI[Math.max(0, stepIndex)];
   const stepGateCtx = {
     hasFrontImage: Boolean(imageUrl),
+    hasScan: Boolean(scanUrl),
     markCount: marks.length,
   };
   const canContinue = canLeaveStep(step, stepGateCtx);
@@ -239,21 +244,41 @@ export function ConsultaApp() {
 
   async function applyTemplate(id: string) {
     const tpl = PROCEDURE_TEMPLATES.find((t) => t.id === id);
-    if (!tpl || !imageUrl) {
-      setTemplateError("Envie a foto frontal antes de aplicar um roteiro.");
+    if (!tpl) return;
+    if (!imageUrl && !scanUrl) {
+      setTemplateError("Importe um scan Sense ou uma foto frontal primeiro.");
       return;
     }
     setTemplateBusy(true);
     setTemplateError(null);
     try {
+      // Scan: roteiro no espaço da malha. Foto: ancora no rosto detectado.
+      if (scanUrl && !imageUrl) {
+        setMarks(marksFromTemplate(tpl));
+        setActiveTemplate(id);
+        setNotes((prev) => prev || tpl.suggestedNotes);
+        return;
+      }
+      if (!imageUrl) {
+        setMarks(marksFromTemplate(tpl));
+        setActiveTemplate(id);
+        setNotes((prev) => prev || tpl.suggestedNotes);
+        return;
+      }
       let face = faceLandmarks;
       if (!face) {
         face = await detectFaceLandmarks(imageUrl);
         setFaceLandmarks(face);
       }
       if (!face?.length) {
+        if (scanUrl) {
+          setMarks(marksFromTemplate(tpl));
+          setActiveTemplate(id);
+          setNotes((prev) => prev || tpl.suggestedNotes);
+          return;
+        }
         setTemplateError(
-          "Não encontrei um rosto nítido. Use foto frontal bem iluminada.",
+          "Não encontrei um rosto nítido. Use foto frontal ou importe o scan Sense.",
         );
         return;
       }
@@ -266,10 +291,24 @@ export function ConsultaApp() {
       setActiveTemplate(id);
       setNotes((prev) => prev || tpl.suggestedNotes);
     } catch {
-      setTemplateError("Falha ao localizar o rosto. Tente novamente.");
+      setTemplateError("Falha ao aplicar o roteiro. Tente novamente.");
     } finally {
       setTemplateBusy(false);
     }
+  }
+
+  function onScanFile(file: File | null) {
+    if (!file) return;
+    const lower = file.name.toLowerCase();
+    if (!/\.(obj|ply|stl)$/.test(lower)) {
+      setTemplateError("Use arquivo OBJ, PLY ou STL exportado do Sense.");
+      return;
+    }
+    if (scanUrl) URL.revokeObjectURL(scanUrl);
+    const url = URL.createObjectURL(file);
+    setScanUrl(url);
+    setScanName(file.name);
+    setTemplateError(null);
   }
 
   async function handleExport() {
@@ -354,6 +393,9 @@ export function ConsultaApp() {
     setStep("foto");
     setImageUrl(null);
     setProfileUrl(null);
+    if (scanUrl) URL.revokeObjectURL(scanUrl);
+    setScanUrl(null);
+    setScanName(null);
     setMarks([]);
     setScenario("conservador");
     setPatientLabel("");
@@ -385,6 +427,7 @@ export function ConsultaApp() {
           if (
             !canLeaveStep(STEPS_UI[idx].id, {
               hasFrontImage: Boolean(imageUrl),
+              hasScan: Boolean(scanUrl),
               markCount: marks.length,
             })
           ) {
@@ -399,14 +442,14 @@ export function ConsultaApp() {
           return STEPS_UI[Math.max(idx - 1, 0)].id;
         });
       }
-      if ((e.key === "p" || e.key === "P") && imageUrl) setPresent(true);
+      if ((e.key === "p" || e.key === "P") && (imageUrl || scanUrl)) setPresent(true);
       if (e.key === "f" || e.key === "F") {
         setScriptIndex((i) => (i + 1) % SCRIPT_LINES.length);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [imageUrl, marks.length]);
+  }, [imageUrl, scanUrl, marks.length]);
 
   if (accessGate === "loading") {
     return (
@@ -469,7 +512,8 @@ export function ConsultaApp() {
     );
   }
 
-  const show3d = Boolean(faceLandmarks?.length) && !show2d;
+  const showScan = Boolean(scanUrl && scanName);
+  const show3d = !showScan && Boolean(faceLandmarks?.length) && !show2d;
 
   return (
     <div className="grain atmosphere min-h-screen">
@@ -482,7 +526,31 @@ export function ConsultaApp() {
         />
       )}
 
-      {present && imageUrl && (
+      {present && scanUrl && scanName && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-ink text-paper">
+          <div className="flex items-center justify-between border-b border-paper/10 px-5 py-3">
+            <Logo variant="light" size="md" />
+            <button
+              type="button"
+              onClick={() => setPresent(false)}
+              className="rounded-lg border border-paper/25 px-4 py-2 text-[13px]"
+            >
+              Encerrar
+            </button>
+          </div>
+          <div className="mx-auto w-full max-w-4xl flex-1 px-5 py-5">
+            <ScanMesh3D
+              scanUrl={scanUrl}
+              fileName={scanName}
+              marks={marks}
+              scenario={scenario}
+              autoRotate
+            />
+          </div>
+        </div>
+      )}
+
+      {present && imageUrl && !scanUrl && (
         <PresentMode
           imageUrl={imageUrl}
           profileUrl={profileUrl}
@@ -521,7 +589,7 @@ export function ConsultaApp() {
             </button>
             <button
               type="button"
-              disabled={!imageUrl}
+              disabled={!imageUrl && !scanUrl}
               onClick={() => setPresent(true)}
               className="btn-primary !px-4 !py-2 text-[12px] disabled:opacity-40"
             >
@@ -572,7 +640,16 @@ export function ConsultaApp() {
         <section className="space-y-4">
           {step === "foto" && (
             <div className="panel overflow-hidden p-0">
-              {imageUrl ? (
+              {scanUrl && scanName ? (
+                <div className="flex min-h-[280px] flex-col items-center justify-center gap-2 bg-ink px-6 py-10 text-center">
+                  <p className="text-[15px] text-paper">Scan Sense carregado</p>
+                  <p className="text-[13px] text-mist">{scanName}</p>
+                  <p className="max-w-sm text-[12px] text-mist/80">
+                    Na Mesa você gira a malha 3D real. Prefira exportar PLY ou OBJ
+                    no software Sense (Windows).
+                  </p>
+                </div>
+              ) : imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imageUrl}
@@ -581,15 +658,23 @@ export function ConsultaApp() {
                 />
               ) : (
                 <div className="flex min-h-[320px] items-center justify-center px-6 text-center text-[14px] text-ink-soft">
-                  Aguardando foto frontal para montar a mesa 3D
+                  Importe o scan do Sense (OBJ/PLY) ou uma foto frontal
                 </div>
               )}
             </div>
           )}
 
-          {step === "mesa" && imageUrl && (
+          {step === "mesa" && (scanUrl || imageUrl) && (
             <div className="space-y-3">
-              {show3d && faceLandmarks ? (
+              {showScan && scanUrl && scanName ? (
+                <ScanMesh3D
+                  scanUrl={scanUrl}
+                  fileName={scanName}
+                  marks={marks}
+                  scenario={scenario}
+                  autoRotate={autoRotate}
+                />
+              ) : imageUrl && show3d && faceLandmarks ? (
                 <FaceMesh3D
                   imageUrl={imageUrl}
                   faceLandmarks={faceLandmarks}
@@ -597,7 +682,7 @@ export function ConsultaApp() {
                   scenario={scenario}
                   autoRotate={autoRotate}
                 />
-              ) : (
+              ) : imageUrl ? (
                 <FaceCanvas
                   imageUrl={imageUrl}
                   marks={marks}
@@ -613,21 +698,23 @@ export function ConsultaApp() {
                     ])
                   }
                 />
-              )}
+              ) : null}
               <div className="flex flex-wrap gap-3 text-[12px] text-ink-soft">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={show2d || !faceLandmarks?.length}
-                    disabled={!faceLandmarks?.length}
-                    onChange={(e) => setShow2d(e.target.checked)}
-                    className="accent-sea"
-                  />
-                  {faceLandmarks?.length
-                    ? "Ajuste fino 2D"
-                    : "3D indisponível — use 2D"}
-                </label>
-                {show3d && (
+                {!showScan && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={show2d || !faceLandmarks?.length}
+                      disabled={!faceLandmarks?.length}
+                      onChange={(e) => setShow2d(e.target.checked)}
+                      className="accent-sea"
+                    />
+                    {faceLandmarks?.length
+                      ? "Ajuste fino 2D"
+                      : "3D da foto indisponível — use 2D"}
+                  </label>
+                )}
+                {(showScan || show3d) && (
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -642,9 +729,17 @@ export function ConsultaApp() {
             </div>
           )}
 
-          {step === "exportar" && imageUrl && (
+          {step === "exportar" && (scanUrl || imageUrl) && (
             <div className="space-y-3">
-              {faceLandmarks?.length ? (
+              {scanUrl && scanName ? (
+                <ScanMesh3D
+                  scanUrl={scanUrl}
+                  fileName={scanName}
+                  marks={marks}
+                  scenario={scenario}
+                  autoRotate={false}
+                />
+              ) : imageUrl && faceLandmarks?.length ? (
                 <FaceMesh3D
                   imageUrl={imageUrl}
                   faceLandmarks={faceLandmarks}
@@ -652,7 +747,7 @@ export function ConsultaApp() {
                   scenario={scenario}
                   autoRotate={false}
                 />
-              ) : (
+              ) : imageUrl ? (
                 <FaceCanvas
                   imageUrl={imageUrl}
                   marks={marks}
@@ -663,7 +758,7 @@ export function ConsultaApp() {
                   faceLandmarks={faceLandmarks}
                   onAddMark={() => undefined}
                 />
-              )}
+              ) : null}
             </div>
           )}
 
@@ -715,26 +810,60 @@ export function ConsultaApp() {
 
           {step === "foto" && (
             <Panel>
-              <GuidedCapture
-                hasFront={Boolean(imageUrl)}
-                hasProfile={Boolean(profileUrl)}
-                onCapture={(dataUrl, angle) => {
-                  if (angle === "front") setImageUrl(dataUrl);
-                  else setProfileUrl(dataUrl);
-                }}
-              />
-              <label className="btn-ghost block cursor-pointer text-center">
-                {imageUrl ? "Trocar foto frontal" : "Enviar do arquivo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => onFile(e.target.files?.[0] ?? null, "front")}
+              <div>
+                <p className="mb-2 text-[12px] font-medium text-ink">
+                  Scan Sense (recomendado)
+                </p>
+                <label className="btn-primary block cursor-pointer text-center">
+                  {scanName ? "Trocar scan 3D" : "Importar OBJ / PLY / STL"}
+                  <input
+                    type="file"
+                    accept=".obj,.ply,.stl,model/obj,model/stl"
+                    className="hidden"
+                    onChange={(e) => onScanFile(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+                <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
+                  No software Sense (Windows): exporte <strong>PLY</strong> ou{" "}
+                  <strong>OBJ</strong> (cor por vértice). STL só traz a forma.
+                </p>
+                {scanName && (
+                  <p className="mt-2 text-[12px] text-sea-deep">{scanName}</p>
+                )}
+              </div>
+
+              <div className="border-t border-ink/10 pt-4">
+                <p className="mb-2 text-[12px] font-medium text-ink">
+                  Ou foto frontal
+                </p>
+                <GuidedCapture
+                  hasFront={Boolean(imageUrl)}
+                  hasProfile={Boolean(profileUrl)}
+                  onCapture={(dataUrl, angle) => {
+                    if (angle === "front") setImageUrl(dataUrl);
+                    else setProfileUrl(dataUrl);
+                  }}
                 />
-              </label>
-              <button type="button" onClick={loadDemo} className="btn-ghost w-full">
-                Usar face educativa
-              </button>
+                <label className="btn-ghost mt-2 block cursor-pointer text-center">
+                  {imageUrl ? "Trocar foto frontal" : "Enviar foto do arquivo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      onFile(e.target.files?.[0] ?? null, "front")
+                    }
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={loadDemo}
+                  className="btn-ghost mt-2 w-full"
+                >
+                  Usar face educativa
+                </button>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
                   label="Paciente (opcional)"
@@ -749,14 +878,18 @@ export function ConsultaApp() {
                   placeholder="Nome / registro"
                 />
               </div>
-              <PhotoQualityHint imageUrl={imageUrl} />
-              {imageUrl && (
+              {imageUrl && !scanUrl && <PhotoQualityHint imageUrl={imageUrl} />}
+              {scanUrl ? (
+                <p className="text-[12px] text-ink-soft">
+                  Scan pronto para a Mesa 3D.
+                </p>
+              ) : imageUrl ? (
                 <p className="text-[12px] text-ink-soft">
                   {faceLandmarks?.length
-                    ? "Rosto detectado — pronto para a mesa 3D."
-                    : "Detectando rosto…"}
+                    ? "Rosto detectado na foto."
+                    : "Detectando rosto na foto…"}
                 </p>
-              )}
+              ) : null}
             </Panel>
           )}
 
@@ -769,7 +902,7 @@ export function ConsultaApp() {
                     key={tpl.id}
                     type="button"
                     title={tpl.description}
-                    disabled={templateBusy || !imageUrl}
+                    disabled={templateBusy || (!imageUrl && !scanUrl)}
                     onClick={() => applyTemplate(tpl.id)}
                     className={`rounded-lg px-2.5 py-1.5 text-[11px] disabled:opacity-50 ${
                       activeTemplate === tpl.id
@@ -783,8 +916,10 @@ export function ConsultaApp() {
               </div>
               <p className="mt-2 text-[11px] leading-relaxed text-ink-soft">
                 {templateBusy
-                  ? "Alinhando ao rosto…"
-                  : "Volumes no 3D · arraste para girar"}
+                  ? "Alinhando…"
+                  : showScan
+                    ? "Volumes no scan Sense · arraste para girar"
+                    : "Volumes no 3D · arraste para girar"}
               </p>
               {templateError && (
                 <p className="mt-2 text-[12px] text-warn">{templateError}</p>
