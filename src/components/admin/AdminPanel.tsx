@@ -17,6 +17,7 @@ import {
   listLeads,
   listUsage,
   promoteClinicToClient,
+  rejectDemoFromLead,
   updateClinicStatus,
   updateLeadStatus,
   updateTicketStatus,
@@ -299,6 +300,7 @@ export function AdminPanel() {
                             "novo",
                             "demo_solicitado",
                             "demo_liberado",
+                            "demo_recusado",
                             "contatado",
                             "piloto",
                             "cliente",
@@ -312,7 +314,10 @@ export function AdminPanel() {
                         ))}
                       </select>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <button
+                        {lead.status !== "demo_liberado" &&
+                          lead.status !== "demo_recusado" &&
+                          lead.status !== "cliente_liberado" && (
+                          <button
                           type="button"
                           disabled={busy}
                           onClick={async () => {
@@ -344,6 +349,45 @@ export function AdminPanel() {
                         >
                           Liberar demo
                         </button>
+                          )}
+                        {lead.status !== "demo_recusado" &&
+                          lead.status !== "cliente_liberado" && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                `Recusar o pedido de demonstração de ${lead.name}? O lead será avisado por e-mail.`,
+                              )
+                            ) {
+                              return;
+                            }
+                            setBusy(true);
+                            setMsg("");
+                            try {
+                              const r = await rejectDemoFromLead(lead.id);
+                              setMsg(
+                                r.emailSent
+                                  ? "Pedido recusado. E-mail enviado ao lead."
+                                  : `Pedido recusado. E-mail ao lead falhou${r.emailReason ? ` (${r.emailReason})` : ""}.`,
+                              );
+                              await refresh();
+                            } catch (err) {
+                              setMsg(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Falha ao recusar pedido.",
+                              );
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center rounded-full border border-warn/40 bg-paper px-4 py-2 text-[13px] font-medium text-warn shadow-sm transition hover:bg-warn/10 disabled:opacity-40"
+                        >
+                          Recusar demo
+                        </button>
+                          )}
                         <button
                           type="button"
                           disabled={busy}

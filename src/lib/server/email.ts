@@ -278,3 +278,52 @@ export async function sendInviteEmail(input: {
 
   return sendResend({ to: input.to, subject, html, text });
 }
+
+export async function sendDemoRejectionEmail(input: {
+  to: string;
+  name: string;
+  company?: string;
+}) {
+  const subject = "Atualização sobre seu pedido de demonstração — Vislumbre";
+  const firstName = input.name.trim().split(/\s+/)[0] || "olá";
+  const text = [
+    `Olá, ${firstName}.`,
+    ``,
+    `Obrigado pelo interesse no Vislumbre${input.company ? ` (${input.company})` : ""}.`,
+    ``,
+    `Neste momento não foi possível liberar o acesso de demonstração para este pedido.`,
+    `Se quiser, responda este e-mail ou fale conosco pelo site para entendermos melhor o momento da clínica.`,
+    ``,
+    `${publicAppUrl()}`,
+    ``,
+    `Equipe Vislumbre`,
+  ].join("\n");
+
+  const html = emailShell({
+    preheader: "Atualização sobre seu pedido de demonstração",
+    title: "Sobre o seu pedido",
+    bodyHtml: `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:${INK_SOFT};">
+        Olá, <strong style="color:${INK};">${escapeHtml(firstName)}</strong>.
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:${INK_SOFT};">
+        Obrigado pelo interesse no Vislumbre${
+          input.company
+            ? ` para <strong style="color:${INK};">${escapeHtml(input.company)}</strong>`
+            : ""
+        }.
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:${INK_SOFT};">
+        Neste momento não foi possível liberar o acesso de demonstração para este pedido.
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.75;color:${INK_SOFT};">
+        Se fizer sentido retomar a conversa, responda este e-mail ou fale conosco pelo site —
+        teremos prazer em entender o momento da clínica.
+      </p>
+    `,
+    ctaLabel: "Ver o site",
+    ctaUrl: publicAppUrl(),
+  });
+
+  return sendResend({ to: input.to, subject, html, text });
+}

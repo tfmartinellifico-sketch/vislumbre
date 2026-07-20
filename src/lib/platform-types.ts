@@ -12,6 +12,7 @@ export type LeadStatus =
   | "descartado"
   | "demo_solicitado"
   | "demo_liberado"
+  | "demo_recusado"
   | "cliente_liberado";
 export type TicketStatus = "aberto" | "em_andamento" | "resolvido";
 
@@ -134,6 +135,7 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   descartado: "Descartado",
   demo_solicitado: "Demo solicitada",
   demo_liberado: "Demo liberada",
+  demo_recusado: "Demo recusada",
   cliente_liberado: "Cliente liberado",
 };
 

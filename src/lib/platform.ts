@@ -232,6 +232,49 @@ export async function updateLeadStatus(id: string, status: LeadStatus) {
   await updateDoc(doc(db, "leads", id), { status });
 }
 
+/** Recusa pedido de demonstração e (opcionalmente) avisa o lead por e-mail. */
+export async function rejectDemoFromLead(
+  leadId: string,
+  options?: { notifyLead?: boolean },
+) {
+  const user = currentUser();
+  if (!user) throw new Error("Faça login como admin.");
+  const { db } = requireDb();
+  const leadSnap = await getDoc(doc(db, "leads", leadId));
+  if (!leadSnap.exists()) throw new Error("Lead não encontrado.");
+  const lead = { id: leadSnap.id, ...(leadSnap.data() as Omit<Lead, "id">) };
+  if (!lead.email) throw new Error("Lead sem e-mail.");
+
+  await updateDoc(doc(db, "leads", leadId), {
+    status: "demo_recusado" as LeadStatus,
+    rejectedAt: new Date().toISOString(),
+    rejectedBy: user.uid,
+  });
+
+  let emailSent = false;
+  let emailReason: string | undefined;
+  if (options?.notifyLead !== false) {
+    try {
+      const res = await fetch("/api/email/demo-reject", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: lead.email,
+          name: lead.name,
+          company: lead.company || lead.clinic || "",
+        }),
+      });
+      const data = (await res.json()) as { sent?: boolean; reason?: string };
+      emailSent = Boolean(data.sent);
+      emailReason = data.reason;
+    } catch {
+      emailReason = "Falha de rede ao enviar e-mail";
+    }
+  }
+
+  return { emailSent, emailReason };
+}
+
 // —— Clinics ——
 
 export async function createClinicAsAdmin(input: {
