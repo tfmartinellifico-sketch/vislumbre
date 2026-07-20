@@ -62,6 +62,7 @@ import {
 import { currentUser, saveCloudConsulta } from "@/lib/firebase-cloud";
 import { loadClinic, loadMyClinicId, logUsage } from "@/lib/platform";
 import { isClinicAccessAllowed, type Clinic } from "@/lib/platform-types";
+import { APP_COPY } from "@/lib/app-copy";
 
 type ArDevice = "phone" | "glasses";
 type StepId = (typeof STEPS_UI)[number]["id"];
@@ -348,7 +349,7 @@ export function ConsultaApp() {
   if (accessGate === "loading") {
     return (
       <div className="grain atmosphere flex min-h-screen items-center justify-center px-5">
-        <p className="text-[14px] text-ink-soft">Verificando acesso da clínica…</p>
+        <p className="text-[14px] text-ink-soft">{APP_COPY.tool.blocked.loading}</p>
       </div>
     );
   }
@@ -357,14 +358,13 @@ export function ConsultaApp() {
     return (
       <div className="grain atmosphere flex min-h-screen flex-col items-center justify-center px-5 text-center">
         <Logo href="/" size="md" />
-        <h1 className="display mt-8 text-3xl text-ink">Acesso bloqueado</h1>
+        <h1 className="display mt-8 text-3xl text-ink">{APP_COPY.tool.blocked.title}</h1>
         <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
-          A clínica está suspensa ou o trial expirou. A ferramenta não pode ser
-          usada até a conta ser reativada.
+          {APP_COPY.tool.blocked.body}
         </p>
         {clinicAccess && (
           <p className="mt-2 text-[13px] text-ink-soft">
-            {clinicAccess.name} · status {clinicAccess.status}
+            {clinicAccess.name} · {clinicAccess.status}
             {clinicAccess.trialEndsAt
               ? ` · trial até ${new Date(clinicAccess.trialEndsAt).toLocaleDateString("pt-BR")}`
               : ""}
@@ -372,10 +372,10 @@ export function ConsultaApp() {
         )}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link href="/clinica" className="btn-primary">
-            Ver plano / assinar
+            {APP_COPY.tool.blocked.plan}
           </Link>
           <Link href="/#contato" className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]">
-            Falar conosco
+            {APP_COPY.tool.blocked.contact}
           </Link>
         </div>
       </div>
@@ -436,7 +436,7 @@ export function ConsultaApp() {
               }}
               className="btn-primary !py-2 !px-3.5 disabled:opacity-30"
             >
-              Modo paciente
+              Modo apresentação
             </button>
           </div>
         </div>
@@ -505,11 +505,10 @@ export function ConsultaApp() {
                   Apoio tátil
                 </p>
                 <h2 className="display mt-2 text-3xl tracking-tight text-ink">
-                  Kit Contorno na consulta
+                  {APP_COPY.tool.kitTitle}
                 </h2>
                 <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-ink-soft">
-                  Se as peças estiverem na mesa, use o roteiro ao lado. Sem kit,
-                  avance — a tela já sustenta a conversa.
+                  {APP_COPY.tool.kitBody}
                 </p>
                 <div className="mt-6 md:hidden">
                   <KitGuide />
@@ -655,12 +654,12 @@ export function ConsultaApp() {
                 onClick={loadDemo}
                 className="w-full rounded-xl border border-sea/30 bg-sea/[0.06] px-4 py-3 text-[13px] text-sea-deep transition hover:bg-sea/10"
               >
-                Usar face demonstrativa
+                {APP_COPY.tool.demoFace}
               </button>
               <PhotoQualityHint imageUrl={imageUrl} />
               <div className="grid gap-3 sm:grid-cols-2">
                 <Field
-                  label="Rótulo do paciente"
+                  label={APP_COPY.tool.patientLabel}
                   value={patientLabel}
                   onChange={setPatientLabel}
                   placeholder="Iniciais ou código"
@@ -1015,8 +1014,7 @@ export function ConsultaApp() {
                   onChange={(e) => setAccepted(e.target.checked)}
                   className="mt-0.5 accent-sea"
                 />
-                Apresentei como demonstração para conversa, sem garantia de
-                resultado.
+                {APP_COPY.tool.exportAck}
               </label>
               <label className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-soft">
                 <input
@@ -1025,7 +1023,7 @@ export function ConsultaApp() {
                   onChange={(e) => setPatientAck(e.target.checked)}
                   className="mt-0.5 accent-sea"
                 />
-                A paciente compreendeu que a imagem não é o resultado final.
+                {APP_COPY.tool.patientAck}
               </label>
               <label className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-soft">
                 <input
@@ -1034,8 +1032,7 @@ export function ConsultaApp() {
                   onChange={(e) => setKeepPhotosLocal(e.target.checked)}
                   className="mt-0.5 accent-sea"
                 />
-                Guardar fotos neste aparelho no histórico (para ZIP/reabrir). Não
-                sobe para a nuvem.
+                {APP_COPY.tool.photoLocal}
               </label>
 
               <SignaturePad onChange={setSignatureUrl} />
@@ -1086,7 +1083,7 @@ export function ConsultaApp() {
             </button>
           </div>
           <p className="text-center text-[10px] text-ink-soft/80">
-            Atalhos: N continuar · B voltar · P modo paciente
+            {APP_COPY.tool.shortcuts}
           </p>
         </aside>
       </main>

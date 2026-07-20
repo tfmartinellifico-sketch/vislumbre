@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ILLUSTRATION } from "@/lib/ethicalRender";
+import { APP_COPY } from "@/lib/app-copy";
 
 export function EthicsStrip() {
   return (
@@ -9,13 +10,13 @@ export function EthicsStrip() {
       <span>
         <strong className="text-sea-deep">{ILLUSTRATION.watermark}</strong>
         {" · "}
-        Ilustração para conversa — não é preview de resultado
+        {APP_COPY.ethicsStrip}
       </span>
       <Link
         href="/diferenca"
         className="shrink-0 text-sea-deep underline-offset-2 hover:underline"
       >
-        Entenda a diferença
+        {APP_COPY.tool.ethicsLink}
       </Link>
     </div>
   );

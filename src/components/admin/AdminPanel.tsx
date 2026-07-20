@@ -30,6 +30,7 @@ import {
   type UsageEvent,
 } from "@/lib/platform-types";
 import { computePilotMetrics } from "@/lib/metrics";
+import { APP_COPY } from "@/lib/app-copy";
 
 type Tab = "leads" | "clinicas" | "tickets" | "uso" | "criar" | "metricas";
 
@@ -130,9 +131,7 @@ export function AdminPanel() {
         <p className="eyebrow">Administração</p>
         <h1 className="display mt-2 text-4xl tracking-tight">Painel Vislumbre</h1>
         <p className="mt-2 max-w-2xl text-[14px] text-ink-soft">
-          Leads, clínicas, acessos, tickets, métricas do piloto e uso. Admin via
-          lista de e-mails + bootstrap de claim (quando Admin SDK estiver
-          configurado).
+          {APP_COPY.admin.intro}
         </p>
       </div>
 

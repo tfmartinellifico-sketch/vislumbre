@@ -10,12 +10,7 @@ const nextConfig: NextConfig = {
         destination: `https://${SITE_DOMAIN}/:path*`,
         permanent: true,
       },
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.vislumbre.me" }],
-        destination: `https://${SITE_DOMAIN}/:path*`,
-        permanent: true,
-      },
+      // www → apex: configure na Vercel (Domains), não aqui — redirect duplo causa loop.
     ];
   },
 };

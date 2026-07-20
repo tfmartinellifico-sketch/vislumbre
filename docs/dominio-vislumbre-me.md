@@ -27,6 +27,8 @@ Se ainda não comprou **vislumbre.me**, registre no registrador (Namecheap, Pork
 5. Marque **vislumbre.me** como domínio **Primary** (principal).
 6. Opcional: mantenha `*.vercel.app` — o app redireciona `vislumbre-beta.vercel.app` → `vislumbre.me`.
 
+**Importante (evitar loop de redirect):** em **Domains**, defina **`vislumbre.me` como Primary**. Para `www.vislumbre.me`, use o redirect **na Vercel** (www → apex). **Não** configure redirect www também no DNS/registrador apontando de volta — isso gera `ERR_TOO_MANY_REDIRECTS`.
+
 ---
 
 ## 2. Variáveis na Vercel (obrigatório)

@@ -49,8 +49,10 @@ import {
   exportHistoryZipWithPhotos,
   exportTransferPack,
 } from "@/lib/exportData";
+import { APP_COPY } from "@/lib/app-copy";
 
 export function ClinicaPanel() {
+  const cp = APP_COPY.clinica;
   const [profile, setProfile] = useState<ProfessionalProfile>({
     name: "",
     registry: "",
@@ -233,10 +235,10 @@ export function ClinicaPanel() {
           <Logo href="/" size="md" />
           <div className="flex items-center gap-3 text-[13px]">
             <Link href="/entrar" className="text-ink-soft hover:text-ink">
-              Conta / trial
+              {cp.navAccount}
             </Link>
             <Link href="/consulta" className="btn-primary !py-2 !px-3.5">
-              Abrir ferramenta
+              {cp.navTool}
             </Link>
           </div>
         </div>
@@ -246,17 +248,16 @@ export function ClinicaPanel() {
         <section>
           <p className="eyebrow">Clínica</p>
           <h1 className="display mt-3 text-4xl tracking-tight md:text-5xl">
-            Conta, equipe e dados
+            {cp.title}
           </h1>
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-ink-soft">
-            Perfil, histórico, exportação para o prontuário, convites de equipe,
-            plano e suporte. Fotos das pacientes não sobem para a nuvem.
+            {cp.intro}
           </p>
         </section>
 
         <section className="grid gap-6 md:grid-cols-2">
           <div>
-            <h2 className="display text-2xl">Acesso</h2>
+            <h2 className="display text-2xl">{cp.access}</h2>
             <div className="mt-4">
               <FirebaseAccount onUserChange={handleUserChange} />
             </div>
@@ -275,16 +276,16 @@ export function ClinicaPanel() {
             )}
             {!user && (
               <p className="mt-3 text-[13px] text-ink-soft">
-                Sem conta, tudo fica só neste navegador.{" "}
+                {cp.noAccount}{" "}
                 <Link href="/entrar" className="text-sea-deep underline">
-                  Criar trial ou aceitar convite
+                  {cp.noAccountLink}
                 </Link>
               </p>
             )}
           </div>
 
           <div>
-            <h2 className="display text-2xl">Plano</h2>
+            <h2 className="display text-2xl">{cp.plan}</h2>
             {clinic ? (
               <div className="mt-4 rounded-xl border border-ink/10 bg-paper p-4 text-[13px]">
                 <p className="font-medium text-ink">{clinic.name}</p>
@@ -298,10 +299,7 @@ export function ClinicaPanel() {
                   </p>
                 )}
                 {!accessOk && (
-                  <p className="mt-3 text-warn">
-                    Acesso suspenso ou trial encerrado. Assine abaixo ou fale
-                    com o suporte.
-                  </p>
+                  <p className="mt-3 text-warn">{cp.planSuspended}</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
@@ -328,9 +326,9 @@ export function ClinicaPanel() {
               </div>
             ) : (
               <p className="mt-4 text-[13px] text-ink-soft">
-                Nenhuma clínica vinculada.{" "}
+                {cp.noClinic}{" "}
                 <Link href="/entrar" className="text-sea-deep underline">
-                  Iniciar trial
+                  {cp.noClinicLink}
                 </Link>
               </p>
             )}
@@ -339,7 +337,7 @@ export function ClinicaPanel() {
 
         <section className="grid gap-10 md:grid-cols-2">
           <div>
-            <h2 className="display text-2xl">Perfil profissional</h2>
+            <h2 className="display text-2xl">{cp.profile}</h2>
             <div className="mt-4 space-y-3">
               {(
                 [
@@ -376,7 +374,7 @@ export function ClinicaPanel() {
 
           <div>
             <div className="flex items-end justify-between gap-3">
-              <h2 className="display text-2xl">Histórico</h2>
+              <h2 className="display text-2xl">{cp.history}</h2>
               {history.length > 0 && (
                 <button
                   type="button"
@@ -388,8 +386,7 @@ export function ClinicaPanel() {
               )}
             </div>
             <p className="mt-2 text-sm text-ink-soft">
-              {history.length} sessão(ões). Fotos não entram neste histórico em
-              nuvem.
+              {history.length} sessão(ões). {cp.historyNote}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <button
@@ -440,8 +437,7 @@ export function ClinicaPanel() {
                 onChange={(e) => setZipConsent(e.target.checked)}
                 className="mt-0.5 accent-sea"
               />
-              Consentimento: exporto fotos armazenadas neste aparelho sob minha
-              responsabilidade (LGPD). Fotos nunca vão para a nuvem Vislumbre.
+              {cp.zipConsent}
             </label>
             <ul className="mt-4 max-h-[22rem] space-y-3 overflow-y-auto">
               {history.length === 0 && (
@@ -499,10 +495,9 @@ export function ClinicaPanel() {
 
         {clinic && (
           <section className="rounded-2xl border border-ink/10 bg-paper p-6">
-            <h2 className="display text-2xl">Equipe</h2>
+            <h2 className="display text-2xl">{cp.team}</h2>
             <p className="mt-2 text-[13px] text-ink-soft">
-              {members.length} / {clinic.seats} assentos em uso. Convites
-              pendentes também contam no limite.
+              {members.length} / {clinic.seats} assentos. {cp.teamNote}
             </p>
             <ul className="mt-4 space-y-2">
               {members.map((m) => (
@@ -561,7 +556,7 @@ export function ClinicaPanel() {
 
         <section className="grid gap-8 md:grid-cols-2">
           <div className="rounded-2xl border border-ink/10 bg-paper p-6">
-            <h2 className="display text-2xl">Suporte</h2>
+            <h2 className="display text-2xl">{cp.support}</h2>
             <div className="mt-4 space-y-3">
               <input
                 value={ticketSubject}
@@ -607,10 +602,9 @@ export function ClinicaPanel() {
           </div>
 
           <div className="rounded-2xl border border-warn/20 bg-warn/[0.04] p-6">
-            <h2 className="display text-2xl text-ink">Excluir conta</h2>
+            <h2 className="display text-2xl text-ink">{cp.deleteAccount}</h2>
             <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
-              Apaga perfil, histórico na nuvem e vínculo com a clínica. Fotos
-              locais você remove no próprio aparelho. Irreversível.
+              {cp.deleteAccountBody}
             </p>
             <button
               type="button"

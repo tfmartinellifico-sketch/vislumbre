@@ -11,11 +11,14 @@ import {
   signUpWithEmail,
 } from "@/lib/firebase-cloud";
 
+import { APP_COPY } from "@/lib/app-copy";
+
 type Props = {
   onUserChange: (user: User | null) => void;
 };
 
 export function FirebaseAccount({ onUserChange }: Props) {
+  const ac = APP_COPY.account;
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,11 +38,9 @@ export function FirebaseAccount({ onUserChange }: Props) {
   if (!isFirebaseConfigured) {
     return (
       <div className="rounded-lg border border-sand-deep/30 bg-sand/15 p-4">
-        <p className="text-sm font-medium text-ink">Firebase aguardando configuração</p>
+        <p className="text-sm font-medium text-ink">{ac.unconfiguredTitle}</p>
         <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-          O app continua local. Preencha <code>.env.local</code> conforme
-          <code className="ml-1">docs/firebase-setup.md</code> para ativar login e
-          sincronização.
+          {ac.unconfiguredBody}
         </p>
       </div>
     );
@@ -50,7 +51,7 @@ export function FirebaseAccount({ onUserChange }: Props) {
       <div className="rounded-lg border border-sea/20 bg-sea/5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-ink">Nuvem conectada</p>
+            <p className="text-sm font-medium text-ink">{ac.connected}</p>
             <p className="mt-1 text-xs text-ink-soft">{user.email}</p>
           </div>
           <button
@@ -62,8 +63,7 @@ export function FirebaseAccount({ onUserChange }: Props) {
           </button>
         </div>
         <p className="mt-3 text-[11px] leading-relaxed text-sea-deep">
-          Perfil e planejamentos são sincronizados. Fotos continuam somente neste
-          dispositivo.
+          {ac.syncNote}
         </p>
       </div>
     );
@@ -114,7 +114,7 @@ export function FirebaseAccount({ onUserChange }: Props) {
               mode === item ? "bg-sea-deep text-paper" : "text-ink-soft"
             }`}
           >
-            {item === "login" ? "Entrar" : "Criar conta"}
+            {item === "login" ? ac.login : ac.signup}
           </button>
         ))}
       </div>
@@ -139,7 +139,7 @@ export function FirebaseAccount({ onUserChange }: Props) {
           onClick={submit}
           className="w-full rounded-md bg-ink px-4 py-2.5 text-sm text-paper disabled:opacity-50"
         >
-          {busy ? "Aguarde…" : mode === "login" ? "Entrar no Firebase" : "Criar conta"}
+          {busy ? "Aguarde…" : mode === "login" ? ac.submitLogin : ac.submitSignup}
         </button>
         <button
           type="button"
@@ -147,7 +147,7 @@ export function FirebaseAccount({ onUserChange }: Props) {
           onClick={recover}
           className="text-xs text-sea hover:underline"
         >
-          Esqueci a senha
+          {ac.forgot}
         </button>
         {message && <p className="text-xs text-warn">{message}</p>}
       </div>
