@@ -8,33 +8,52 @@ export default function PrivacidadePage() {
         <Logo href="/" size="md" />
         <h1 className="display mt-10 text-4xl">Privacidade</h1>
         <p className="mt-2 text-xs text-ink-soft">
-          Rascunho alinhado à LGPD — revisar com DPO/advogado.
+          Rascunho alinhado à LGPD (v0.2) — revisar com DPO/advogado antes de
+          escala comercial. Julho/2026.
         </p>
         <div className="mt-8 space-y-4 text-sm leading-relaxed text-ink-soft">
           <p>
             <strong className="text-ink">Controlador:</strong> operador do
-            Vislumbre (atualize com razão social e contato quando formalizar).
+            Vislumbre (atualize com razão social, CNPJ e canal de contato quando
+            formalizar).
+          </p>
+          <p>
+            <strong className="text-ink">Bases e finalidades.</strong> Conta e
+            operação do serviço (execução de contrato); leads comerciais
+            (legítimo interesse / consentimento no formulário); segurança e
+            prevenção a abuso; métricas agregadas de uso do piloto.
           </p>
           <p>
             <strong className="text-ink">Dados de leads:</strong> nome, e-mail,
-            telefone, clínica e mensagem — finalidade de contato comercial.
+            telefone, clínica, cidade e mensagem — contato comercial e
+            notificação interna por e-mail.
           </p>
           <p>
             <strong className="text-ink">Dados de conta:</strong> e-mail, perfil
-            profissional, vínculo com clínica, histórico de consultas sem foto.
+            profissional, vínculo com clínica, preferência/índice/flags da
+            sessão no histórico, tickets de suporte. Pagamentos: dados de
+            cobrança ficam com o provedor (Stripe); guardamos IDs de cliente /
+            assinatura na clínica.
           </p>
           <p>
-            <strong className="text-ink">Fotos:</strong> processadas localmente no
-            navegador; não são enviadas ao Firebase nesta versão.
+            <strong className="text-ink">Fotos:</strong> processadas localmente.
+            Não são enviadas ao Firebase. Export ZIP com fotos só ocorre com
+            consentimento explícito do profissional no aparelho.
           </p>
           <p>
-            <strong className="text-ink">Direitos:</strong> acesso, correção,
-            exportação e exclusão via /clinica ou contato. Tickets de suporte
-            ficam registrados até resolução.
+            <strong className="text-ink">Compartilhamento:</strong> Firebase
+            (Google), Vercel (hospedagem), Resend (e-mail) e Stripe (pagamento),
+            nos limites necessários ao serviço.
           </p>
           <p>
-            Hospedagem: Vercel (aplicação) e Google Firebase (auth/dados de
-            conta). Eventos de uso agregados ajudam a melhorar o produto.
+            <strong className="text-ink">Direitos (LGPD):</strong> acesso,
+            correção, portabilidade (export), eliminação (exclusão de conta em
+            /clinica) e oposição. Contate o suporte para exercer direitos.
+          </p>
+          <p>
+            <strong className="text-ink">Retenção:</strong> enquanto a conta
+            existir; leads até descarte comercial; tickets até resolução e
+            prazo operacional; eventos de uso agregados para o piloto.
           </p>
           <Link href="/termos" className="text-sea-deep underline">
             Termos de uso

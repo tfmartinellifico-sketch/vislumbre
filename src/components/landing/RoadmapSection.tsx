@@ -11,12 +11,12 @@ const fade = {
 
 const ITEMS = [
   { label: "Ferramenta de consulta", status: "done", note: "Fluxo completo no ar" },
-  { label: "Leads + painel admin", status: "done", note: "/admin · /#contato" },
-  { label: "Clínicas, trial e convites", status: "done", note: "/entrar · equipe" },
-  { label: "Export JSON/CSV/prontuário", status: "done", note: "Em /clinica" },
-  { label: "Tickets e exclusão de conta", status: "done", note: "LGPD básico" },
-  { label: "Checkout Asaas/Stripe", status: "next", note: "Ativação manual por enquanto" },
-  { label: "Kit físico fabricado", status: "next", note: "Spec pronta" },
+  { label: "Leads + painel admin", status: "done", note: "/admin · e-mail Resend" },
+  { label: "Clínicas, trial e convites", status: "done", note: "Assentos + e-mail" },
+  { label: "Bloqueio trial/suspensa", status: "done", note: "Ferramenta trava de verdade" },
+  { label: "Export JSON/CSV/ZIP/prontuário", status: "done", note: "Em /clinica" },
+  { label: "Checkout Stripe", status: "done", note: "Webhook → active/suspended" },
+  { label: "Kit físico fabricado", status: "next", note: "Spec pronta — fora do código" },
 ];
 
 export function RoadmapSection() {

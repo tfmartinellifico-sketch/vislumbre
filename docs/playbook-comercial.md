@@ -47,5 +47,5 @@
 - [ ] CNPJ / marca INPI “Vislumbre”  
 - [ ] Termos de uso + privacidade  
 - [ ] Conta Stripe/Asaas  
-- [ ] Domínio vislumbre.com.br (ou similar disponível)  
+- [ ] Domínio **vislumbre.me** (DNS + Vercel — ver `docs/dominio-vislumbre-me.md`)  
 - [ ] 5 cartas de intenção de piloto

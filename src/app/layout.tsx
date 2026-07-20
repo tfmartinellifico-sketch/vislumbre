@@ -6,6 +6,7 @@ import {
   Plus_Jakarta_Sans,
   Fraunces,
 } from "next/font/google";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -39,14 +40,20 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Vislumbre — Clareza antes da decisão",
+  metadataBase: new URL(SITE_URL),
+  title: `${SITE_NAME} — Clareza antes da decisão`,
   description:
     "Ferramenta de consulta para estética facial: cenários de conversa, visualização ao vivo e registro responsável — sem prometer resultado.",
   openGraph: {
-    title: "Vislumbre",
+    title: SITE_NAME,
     description: "Clareza antes da decisão. Demonstração para conversa, nunca garantia.",
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "pt_BR",
     type: "website",
+  },
+  alternates: {
+    canonical: SITE_URL,
   },
 };
 

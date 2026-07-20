@@ -52,6 +52,7 @@ import {
   PROCEDURE_TEMPLATES,
 } from "@/lib/templates";
 import {
+  consumeReopenConsulta,
   hasSeenOnboarding,
   loadProfile,
   markOnboardingSeen,
@@ -64,6 +65,7 @@ import { isClinicAccessAllowed, type Clinic } from "@/lib/platform-types";
 
 type ArDevice = "phone" | "glasses";
 type StepId = (typeof STEPS_UI)[number]["id"];
+type AccessGate = "loading" | "ok" | "blocked";
 
 export function ConsultaApp() {
   const [step, setStep] = useState<StepId>("foto");
@@ -98,6 +100,8 @@ export function ConsultaApp() {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [showedExaggerated, setShowedExaggerated] = useState(false);
   const [clinicAccess, setClinicAccess] = useState<Clinic | null>(null);
+  const [accessGate, setAccessGate] = useState<AccessGate>("loading");
+  const [keepPhotosLocal, setKeepPhotosLocal] = useState(false);
 
   function selectScenario(id: ScenarioId) {
     setScenario(id);
@@ -143,15 +147,37 @@ export function ConsultaApp() {
         );
       }
       if (!hasSeenOnboarding()) setShowOnboarding(true);
+
+      const reopened = consumeReopenConsulta();
+      if (reopened) {
+        setPatientLabel(reopened.patientLabel);
+        setProfessionalLabel(reopened.professionalLabel);
+        setScenario(reopened.scenario);
+        setMarks(reopened.marks);
+        setVectors(reopened.vectors);
+        setNotes(reopened.notes);
+        setTopics(reopened.topics);
+        setPreference(reopened.preference);
+        setPatientAck(reopened.patientAck);
+        setShowedExaggerated(reopened.showedExaggerated);
+        if (reopened.signatureDataUrl) setSignatureUrl(reopened.signatureDataUrl);
+        if (reopened.photoFrontDataUrl) setImageUrl(reopened.photoFrontDataUrl);
+        if (reopened.photoProfileDataUrl) setProfileUrl(reopened.photoProfileDataUrl);
+        setStep(reopened.marks.length ? "marcar" : "foto");
+      }
+
       void (async () => {
         try {
           const id = await loadMyClinicId();
           if (id) {
             const c = await loadClinic(id);
             setClinicAccess(c);
+            setAccessGate(isClinicAccessAllowed(c) ? "ok" : "blocked");
+          } else {
+            setAccessGate("ok");
           }
         } catch {
-          /* offline / sem firebase */
+          setAccessGate("ok");
         }
       })();
     }, 0);
@@ -216,6 +242,13 @@ export function ConsultaApp() {
         notes,
         topics,
         hasPhoto: Boolean(imageUrl),
+        preference,
+        alignmentScore: alignmentScoreValue,
+        patientAck,
+        showedExaggerated,
+        signatureDataUrl: signatureUrl,
+        photoFrontDataUrl: keepPhotosLocal ? imageUrl : null,
+        photoProfileDataUrl: keepPhotosLocal ? profileUrl : null,
       };
       saveConsulta(entry);
       if (currentUser()) {
@@ -312,6 +345,43 @@ export function ConsultaApp() {
   const templateLabel =
     PROCEDURE_TEMPLATES.find((t) => t.id === activeTemplate)?.label ?? null;
 
+  if (accessGate === "loading") {
+    return (
+      <div className="grain atmosphere flex min-h-screen items-center justify-center px-5">
+        <p className="text-[14px] text-ink-soft">Verificando acesso da clínica…</p>
+      </div>
+    );
+  }
+
+  if (accessGate === "blocked") {
+    return (
+      <div className="grain atmosphere flex min-h-screen flex-col items-center justify-center px-5 text-center">
+        <Logo href="/" size="md" />
+        <h1 className="display mt-8 text-3xl text-ink">Acesso bloqueado</h1>
+        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft">
+          A clínica está suspensa ou o trial expirou. A ferramenta não pode ser
+          usada até a conta ser reativada.
+        </p>
+        {clinicAccess && (
+          <p className="mt-2 text-[13px] text-ink-soft">
+            {clinicAccess.name} · status {clinicAccess.status}
+            {clinicAccess.trialEndsAt
+              ? ` · trial até ${new Date(clinicAccess.trialEndsAt).toLocaleDateString("pt-BR")}`
+              : ""}
+          </p>
+        )}
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/clinica" className="btn-primary">
+            Ver plano / assinar
+          </Link>
+          <Link href="/#contato" className="rounded-full border border-ink/15 px-5 py-2.5 text-[13px]">
+            Falar conosco
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grain atmosphere min-h-screen">
       {showOnboarding && (
@@ -394,20 +464,6 @@ export function ConsultaApp() {
       </header>
 
       <EthicsStrip />
-
-      {clinicAccess && !isClinicAccessAllowed(clinicAccess) && (
-        <div className="border-b border-warn/30 bg-warn/[0.08] px-4 py-3 text-center text-[13px] text-warn">
-          Acesso da clínica suspenso ou trial encerrado.{" "}
-          <Link href="/clinica" className="underline">
-            Ver status
-          </Link>{" "}
-          ou{" "}
-          <Link href="/#contato" className="underline">
-            fale conosco
-          </Link>
-          .
-        </div>
-      )}
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 py-8 md:grid-cols-[1.15fr_0.85fr] md:px-6 md:py-10">
         <AnimatePresence mode="wait">
@@ -970,6 +1026,16 @@ export function ConsultaApp() {
                   className="mt-0.5 accent-sea"
                 />
                 A paciente compreendeu que a imagem não é o resultado final.
+              </label>
+              <label className="flex items-start gap-2 text-[12px] leading-relaxed text-ink-soft">
+                <input
+                  type="checkbox"
+                  checked={keepPhotosLocal}
+                  onChange={(e) => setKeepPhotosLocal(e.target.checked)}
+                  className="mt-0.5 accent-sea"
+                />
+                Guardar fotos neste aparelho no histórico (para ZIP/reabrir). Não
+                sobe para a nuvem.
               </label>
 
               <SignaturePad onChange={setSignatureUrl} />

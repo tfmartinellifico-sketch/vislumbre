@@ -22,6 +22,7 @@ import {
 } from "firebase/firestore";
 import { getFirebaseServices, isFirebaseConfigured } from "./firebase";
 import type { ProfessionalProfile, SavedConsulta } from "./storage";
+import { stripMediaFields } from "./storage";
 
 export { isFirebaseConfigured };
 
@@ -100,8 +101,7 @@ export async function saveCloudConsulta(entry: SavedConsulta) {
   if (!user) return false;
   const { db } = requireServices();
   await setDoc(doc(db, "users", user.uid, "consultations", entry.id), {
-    ...entry,
-    // Fotos permanecem locais; apenas esta flag é sincronizada.
+    ...stripMediaFields(entry),
     hasPhoto: entry.hasPhoto,
     syncedAt: new Date().toISOString(),
   });

@@ -32,6 +32,7 @@ No Firebase Console:
 
 1. **Build → Authentication → Get started**
 2. **Sign-in method → Email/Password → Enable**
+3. **Settings → Authorized domains** → adicione `vislumbre.me` (produção)
 
 ## 4. Firestore
 

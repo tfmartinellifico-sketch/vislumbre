@@ -19,10 +19,12 @@ import {
   loadHistory,
   loadProfile,
   saveProfile,
+  stashReopenConsulta,
   type ProfessionalProfile,
   type SavedConsulta,
 } from "@/lib/storage";
 import { SCENARIOS } from "@/lib/regions";
+import { preferenceLabel } from "@/lib/alignment";
 import {
   createMemberInvite,
   createTicket,
@@ -44,6 +46,7 @@ import {
 import {
   exportHistoryCsv,
   exportHistoryJson,
+  exportHistoryZipWithPhotos,
   exportTransferPack,
 } from "@/lib/exportData";
 
@@ -67,6 +70,8 @@ export function ClinicaPanel() {
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketBody, setTicketBody] = useState("");
   const [actionMsg, setActionMsg] = useState("");
+  const [zipConsent, setZipConsent] = useState(false);
+  const [billingBusy, setBillingBusy] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -191,6 +196,36 @@ export function ClinicaPanel() {
 
   const accessOk = isClinicAccessAllowed(clinic);
 
+  async function startCheckout(plan: "mensal" | "anual") {
+    if (!clinic || !user) return;
+    setBillingBusy(true);
+    setActionMsg("");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ clinicId: clinic.id, plan }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Checkout indisponível.");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setActionMsg(
+        err instanceof Error
+          ? err.message
+          : "Falha ao abrir checkout Stripe.",
+      );
+    } finally {
+      setBillingBusy(false);
+    }
+  }
+
   return (
     <div className="grain atmosphere min-h-screen">
       <header className="border-b border-ink/8 bg-paper/90 backdrop-blur-xl">
@@ -264,13 +299,31 @@ export function ClinicaPanel() {
                 )}
                 {!accessOk && (
                   <p className="mt-3 text-warn">
-                    Acesso suspenso ou trial encerrado. Fale com o suporte ou
-                    aguarde ativação do administrador Vislumbre.
+                    Acesso suspenso ou trial encerrado. Assine abaixo ou fale
+                    com o suporte.
                   </p>
                 )}
-                <p className="mt-3 text-[12px] text-ink-soft">
-                  Pagamento: ativação manual pelo admin nesta fase. Em breve
-                  checkout Asaas/Stripe.
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={billingBusy || !user}
+                    onClick={() => startCheckout("mensal")}
+                    className="rounded-lg bg-sea-deep px-3 py-2 text-[12px] text-paper disabled:opacity-40"
+                  >
+                    Assinar mensal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={billingBusy || !user}
+                    onClick={() => startCheckout("anual")}
+                    className="rounded-lg border border-sea/40 px-3 py-2 text-[12px] text-sea-deep disabled:opacity-40"
+                  >
+                    Assinar anual
+                  </button>
+                </div>
+                <p className="mt-3 text-[11px] text-ink-soft">
+                  Checkout Stripe (quando configurado). Sem chaves, o admin
+                  ainda pode ativar manualmente.
                 </p>
               </div>
             ) : (
@@ -362,7 +415,34 @@ export function ClinicaPanel() {
               >
                 Pacote para prontuário
               </button>
+              <button
+                type="button"
+                disabled={!zipConsent}
+                onClick={async () => {
+                  try {
+                    const r = await exportHistoryZipWithPhotos(history);
+                    setActionMsg(
+                      `ZIP gerado: ${r.consultations} consultas, ${r.photoCount} arquivo(s) de foto.`,
+                    );
+                  } catch {
+                    setActionMsg("Falha ao gerar ZIP.");
+                  }
+                }}
+                className="rounded-lg border border-ink/10 px-3 py-1.5 text-[12px] disabled:opacity-40"
+              >
+                ZIP com fotos
+              </button>
             </div>
+            <label className="mt-3 flex items-start gap-2 text-[11px] leading-relaxed text-ink-soft">
+              <input
+                type="checkbox"
+                checked={zipConsent}
+                onChange={(e) => setZipConsent(e.target.checked)}
+                className="mt-0.5 accent-sea"
+              />
+              Consentimento: exporto fotos armazenadas neste aparelho sob minha
+              responsabilidade (LGPD). Fotos nunca vão para a nuvem Vislumbre.
+            </label>
             <ul className="mt-4 max-h-[22rem] space-y-3 overflow-y-auto">
               {history.length === 0 && (
                 <li className="rounded-xl border border-dashed border-ink/15 px-4 py-8 text-center text-[14px] text-ink-soft">
@@ -384,15 +464,31 @@ export function ClinicaPanel() {
                         <p className="mt-1 text-[11px] text-ink-soft">
                           {new Date(item.createdAt).toLocaleString("pt-BR")} ·{" "}
                           {scenario?.label}
+                          {item.alignmentScore != null
+                            ? ` · índice ${item.alignmentScore}`
+                            : ""}
+                        </p>
+                        <p className="mt-1 text-[11px] text-ink-soft">
+                          Preferência: {preferenceLabel(item.preference)}
+                          {item.patientAck ? " · confirmação ok" : ""}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeOne(item.id)}
-                        className="text-[11px] text-ink-soft hover:text-warn"
-                      >
-                        Apagar
-                      </button>
+                      <div className="flex flex-col items-end gap-1">
+                        <Link
+                          href="/consulta"
+                          onClick={() => stashReopenConsulta(item)}
+                          className="text-[11px] text-sea-deep underline"
+                        >
+                          Reabrir
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => removeOne(item.id)}
+                          className="text-[11px] text-ink-soft hover:text-warn"
+                        >
+                          Apagar
+                        </button>
+                      </div>
                     </div>
                   </li>
                 );
@@ -405,7 +501,8 @@ export function ClinicaPanel() {
           <section className="rounded-2xl border border-ink/10 bg-paper p-6">
             <h2 className="display text-2xl">Equipe</h2>
             <p className="mt-2 text-[13px] text-ink-soft">
-              Até {clinic.seats} assentos. Convide pelo e-mail do profissional.
+              {members.length} / {clinic.seats} assentos em uso. Convites
+              pendentes também contam no limite.
             </p>
             <ul className="mt-4 space-y-2">
               {members.map((m) => (
@@ -440,7 +537,9 @@ export function ClinicaPanel() {
                     setInviteLink(
                       `${window.location.origin}/entrar?invite=${id}`,
                     );
-                    setActionMsg("Convite gerado.");
+                    setActionMsg(
+                      "Convite gerado e e-mail enviado (se Resend estiver configurado).",
+                    );
                   } catch (err) {
                     setActionMsg(
                       err instanceof Error ? err.message : "Falha no convite.",

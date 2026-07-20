@@ -29,8 +29,9 @@ import {
   type SupportTicket,
   type UsageEvent,
 } from "@/lib/platform-types";
+import { computePilotMetrics } from "@/lib/metrics";
 
-type Tab = "leads" | "clinicas" | "tickets" | "uso" | "criar";
+type Tab = "leads" | "clinicas" | "tickets" | "uso" | "criar" | "metricas";
 
 export function AdminPanel() {
   const [user, setUser] = useState<User | null>(null);
@@ -53,6 +54,8 @@ export function AdminPanel() {
     notes: "",
   });
 
+  const metrics = computePilotMetrics(clinics, usage);
+
   const refresh = useCallback(async () => {
     if (!(await checkIsAdmin())) {
       setIsAdmin(false);
@@ -63,7 +66,7 @@ export function AdminPanel() {
       listLeads(),
       listClinics(),
       listAllTickets(),
-      listUsage(80),
+      listUsage(500),
     ]);
     setLeads(l);
     setClinics(c);
@@ -96,7 +99,7 @@ export function AdminPanel() {
       const { clinicId, inviteId } = await createClinicAsAdmin(newClinic);
       const link = `${window.location.origin}/entrar?invite=${inviteId}`;
       setInviteLink(link);
-      setMsg(`Clínica criada (${clinicId}). Envie o link de convite ao cliente.`);
+      setMsg(`Clínica criada (${clinicId}). Convite enviado por e-mail (se Resend) e link abaixo.`);
       setNewClinic({
         name: "",
         city: "",
@@ -127,8 +130,9 @@ export function AdminPanel() {
         <p className="eyebrow">Administração</p>
         <h1 className="display mt-2 text-4xl tracking-tight">Painel Vislumbre</h1>
         <p className="mt-2 max-w-2xl text-[14px] text-ink-soft">
-          Leads, clínicas, acessos, tickets e uso. Somente e-mails listados em{" "}
-          <code className="text-ink">NEXT_PUBLIC_ADMIN_EMAILS</code>.
+          Leads, clínicas, acessos, tickets, métricas do piloto e uso. Admin via
+          lista de e-mails + bootstrap de claim (quando Admin SDK estiver
+          configurado).
         </p>
       </div>
 
@@ -148,6 +152,7 @@ export function AdminPanel() {
           <div className="mb-8 flex flex-wrap gap-2">
             {(
               [
+                ["metricas", "Piloto"],
                 ["leads", `Leads (${leads.length})`],
                 ["clinicas", `Clínicas (${clinics.length})`],
                 ["criar", "Criar / convidar"],
@@ -181,6 +186,51 @@ export function AdminPanel() {
             <p className="mb-4 rounded-xl border border-sea/20 bg-sea/[0.05] px-4 py-3 text-[13px] text-sea-deep">
               {msg}
             </p>
+          )}
+
+          {tab === "metricas" && (
+            <section className="space-y-6">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {(
+                  [
+                    ["Consultas (semana)", metrics.consultationsThisWeek],
+                    ["Consultas (sem. ant.)", metrics.consultationsPrevWeek],
+                    ["Logins (semana)", metrics.loginsThisWeek],
+                    ["Leads (semana)", metrics.leadsThisWeek],
+                    ["Clínicas ativas", metrics.activeClinics],
+                    ["Em trial", metrics.trialClinics],
+                    ["Suspensas/canceladas", metrics.suspendedClinics],
+                    ["Trials a vencer (7d)", metrics.trialsExpiringSoon.length],
+                  ] as const
+                ).map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-ink/10 bg-paper px-4 py-4"
+                  >
+                    <p className="text-[11px] text-ink-soft">{label}</p>
+                    <p className="display mt-1 text-3xl text-ink">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div>
+                <h2 className="display text-2xl">Trials a vencer em 7 dias</h2>
+                {metrics.trialsExpiringSoon.length === 0 ? (
+                  <p className="mt-3 text-[13px] text-ink-soft">Nenhum no horizonte.</p>
+                ) : (
+                  <ul className="mt-3 space-y-2">
+                    {metrics.trialsExpiringSoon.map((t) => (
+                      <li
+                        key={t.id}
+                        className="rounded-lg border border-warn/20 bg-warn/[0.04] px-3 py-2 text-[13px]"
+                      >
+                        {t.name} · {t.daysLeft} dia(s) ·{" "}
+                        {new Date(t.trialEndsAt).toLocaleDateString("pt-BR")}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
           )}
 
           {tab === "leads" && (
@@ -294,11 +344,14 @@ export function AdminPanel() {
                             clinicName: c.name,
                             email: c.ownerEmail,
                             role: "owner",
+                            bypassSeatCheck: true,
                           });
                           setInviteLink(
                             `${window.location.origin}/entrar?invite=${id}`,
                           );
-                          setMsg("Novo convite gerado (abaixo).");
+                          setMsg(
+                            "Novo convite gerado e e-mail disparado (se Resend ok).",
+                          );
                         }}
                         className="rounded-lg bg-sea/10 px-2.5 py-1 text-[11px] text-sea-deep"
                       >

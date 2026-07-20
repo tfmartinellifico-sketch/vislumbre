@@ -6,16 +6,16 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function isAdminClaim() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function isAdminDoc() {
       return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    function userClinicId() {
-      return signedIn() && userDoc().data.clinicId;
+    function isAdmin() {
+      return isAdminClaim() || isAdminDoc();
     }
 
     function isClinicMember(clinicId) {
@@ -28,6 +28,8 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/clinics/$(clinicId)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
     }
 
+    // Preferível: escrita só via Admin SDK (/api/admin/bootstrap) + claim admin.
+    // Self-create permanece como fallback se FIREBASE_SERVICE_ACCOUNT ainda não estiver na Vercel.
     match /admins/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow create, update: if signedIn() && request.auth.uid == uid;
@@ -59,7 +61,11 @@ service cloud.firestore {
     match /clinics/{clinicId} {
       allow read: if isAdmin() || isClinicMember(clinicId);
       allow create: if signedIn();
-      allow update: if isAdmin() || isClinicOwnerOrAdmin(clinicId);
+      // Status / plano / assentos / Stripe: só admin (ou Admin SDK no webhook)
+      allow update: if isAdmin()
+        || (isClinicOwnerOrAdmin(clinicId)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['status', 'plan', 'seats', 'stripeCustomerId', 'stripeSubscriptionId']));
       allow delete: if isAdmin();
 
       match /members/{memberId} {
@@ -73,9 +79,8 @@ service cloud.firestore {
     }
 
     match /invites/{inviteId} {
-      // Link de convite pode ser aberto antes do login
       allow get: if true;
-      allow list: if isAdmin();
+      allow list: if isAdmin() || signedIn();
       allow create: if isAdmin() || signedIn();
       allow update: if isAdmin()
         || (signedIn() && resource.data.email == request.auth.token.email);
@@ -88,12 +93,19 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid);
+        || (signedIn() && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId);
       allow delete: if isAdmin();
     }
 
     match /usage_events/{eventId} {
-      allow create: if true;
+      allow create: if
+        (signedIn()
+          && request.resource.data.keys().hasAll(['type', 'userId', 'clinicId', 'createdAt'])
+          && request.resource.data.userId == request.auth.uid)
+        || (request.resource.data.type == 'page_lead'
+          && request.resource.data.userId == null
+          && request.resource.data.keys().hasAll(['type', 'userId', 'clinicId', 'createdAt']));
       allow read: if isAdmin();
       allow update, delete: if isAdmin();
     }

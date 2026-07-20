@@ -39,9 +39,17 @@ git push -u origin main
 
 5. **Deploy**
 
-### 3. Domínio (opcional)
+### 3. Domínio
 
-Settings → Domains → adicione `vislumbre.com.br` ou subdomínio.
+Domínio canônico: **https://vislumbre.me**
+
+Settings → Domains → adicione `vislumbre.me` e siga o checklist em `docs/dominio-vislumbre-me.md`.
+
+Defina na Vercel:
+
+```
+NEXT_PUBLIC_APP_URL=https://vislumbre.me
+```
 
 ### 4. Testar após publicar
 

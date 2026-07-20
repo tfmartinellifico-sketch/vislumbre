@@ -32,6 +32,7 @@ import {
   type TicketStatus,
   type UsageEvent,
 } from "./platform-types";
+import { canAcceptInvite, canInviteMember } from "./seats";
 
 function requireDb() {
   const { db, auth } = getFirebaseServices();
@@ -39,28 +40,85 @@ function requireDb() {
   return { db, auth };
 }
 
+function inviteUrl(inviteId: string) {
+  if (typeof window === "undefined") return `/entrar?invite=${inviteId}`;
+  return `${window.location.origin}/entrar?invite=${inviteId}`;
+}
+
+async function notifyInviteEmail(input: {
+  to: string;
+  clinicName: string;
+  inviteId: string;
+  role: string;
+}) {
+  try {
+    await fetch("/api/email/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: input.to,
+        clinicName: input.clinicName,
+        inviteUrl: inviteUrl(input.inviteId),
+        role: input.role,
+      }),
+    });
+  } catch {
+    /* e-mail é best-effort */
+  }
+}
+
+async function notifyLeadEmail(payload: Record<string, string>) {
+  try {
+    await fetch("/api/email/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 // —— Admin ——
 
 export async function ensureAdminDoc() {
   const user = currentUser();
   if (!user?.email || !isAdminEmail(user.email)) return false;
-  const { db } = requireDb();
-  await setDoc(
-    doc(db, "admins", user.uid),
-    { email: user.email, updatedAt: new Date().toISOString() },
-    { merge: true },
-  );
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      email: user.email,
-      role: "admin",
-      clinicId: null,
-      updatedAt: new Date().toISOString(),
-    },
-    { merge: true },
-  );
-  return true;
+  try {
+    const token = await user.getIdToken();
+    const res = await fetch("/api/admin/bootstrap", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      await user.getIdToken(true);
+      return true;
+    }
+  } catch {
+    /* segue para fallback */
+  }
+  // Fallback se Admin SDK ainda não estiver na Vercel (regras antigas)
+  try {
+    const { db } = requireDb();
+    await setDoc(
+      doc(db, "admins", user.uid),
+      { email: user.email, updatedAt: new Date().toISOString() },
+      { merge: true },
+    );
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        email: user.email,
+        role: "admin",
+        clinicId: null,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+    return true;
+  } catch {
+    return isAdminEmail(user.email);
+  }
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
@@ -70,9 +128,15 @@ export async function checkIsAdmin(): Promise<boolean> {
     await ensureAdminDoc();
     return true;
   }
-  const { db } = requireDb();
-  const snap = await getDoc(doc(db, "admins", user.uid));
-  return snap.exists();
+  try {
+    const { db } = requireDb();
+    const snap = await getDoc(doc(db, "admins", user.uid));
+    if (snap.exists()) return true;
+  } catch {
+    /* ignore */
+  }
+  const token = await user.getIdTokenResult();
+  return token.claims.admin === true;
 }
 
 // —— Leads ——
@@ -103,6 +167,16 @@ export async function submitLead(input: {
     userId: null,
     clinicId: null,
     meta: ref.id,
+  });
+  void notifyLeadEmail({
+    name: input.name.trim(),
+    email: input.email.trim().toLowerCase(),
+    phone: input.phone.trim(),
+    clinic: input.clinic.trim(),
+    city: input.city.trim(),
+    message: input.message.trim(),
+    source: input.source ?? "site",
+    leadId: ref.id,
   });
   return ref.id;
 }
@@ -161,6 +235,12 @@ export async function createClinicAsAdmin(input: {
     usedAt: null,
   };
   await setDoc(inviteRef, invite);
+  void notifyInviteEmail({
+    to: clinic.ownerEmail,
+    clinicName: clinic.name,
+    inviteId: inviteRef.id,
+    role: "owner",
+  });
 
   return { clinicId: clinicRef.id, inviteId: inviteRef.id };
 }
@@ -203,25 +283,65 @@ export async function listClinicMembers(clinicId: string): Promise<ClinicMember[
   return snap.docs.map((d) => d.data() as ClinicMember);
 }
 
+export async function countPendingInvites(clinicId: string) {
+  const { db } = requireDb();
+  const snap = await getDocs(
+    query(collection(db, "invites"), where("clinicId", "==", clinicId)),
+  );
+  return snap.docs.filter((d) => !d.data().usedAt).length;
+}
+
 export async function createMemberInvite(input: {
   clinicId: string;
   clinicName: string;
   email: string;
   role: MemberRole;
+  /** Admin pode forçar convite mesmo no limite (ex.: reenviar owner). */
+  bypassSeatCheck?: boolean;
 }) {
   const user = currentUser();
   if (!user) throw new Error("Login necessário.");
   const { db } = requireDb();
+  const email = input.email.trim().toLowerCase();
+  if (!email) throw new Error("Informe o e-mail.");
+
+  const clinic = await loadClinic(input.clinicId);
+  if (!clinic) throw new Error("Clínica não encontrada.");
+
+  const members = await listClinicMembers(input.clinicId);
+  const emailAlreadyMember = members.some((m) => m.email.toLowerCase() === email);
+  const pendingInviteCount = await countPendingInvites(input.clinicId);
+
+  if (!input.bypassSeatCheck) {
+    const gate = canInviteMember({
+      seats: clinic.seats,
+      memberCount: members.length,
+      pendingInviteCount,
+      emailAlreadyMember,
+    });
+    if (!gate.ok) throw new Error(gate.reason);
+  } else if (emailAlreadyMember && input.role !== "owner") {
+    throw new Error("Este e-mail já é membro da clínica.");
+  }
+
   const ref = doc(collection(db, "invites"));
   await setDoc(ref, {
     clinicId: input.clinicId,
     clinicName: input.clinicName,
-    email: input.email.trim().toLowerCase(),
+    email,
     role: input.role,
     createdAt: new Date().toISOString(),
     createdBy: user.uid,
     usedAt: null,
   } satisfies Omit<Invite, "id">);
+
+  void notifyInviteEmail({
+    to: email,
+    clinicName: input.clinicName,
+    inviteId: ref.id,
+    role: input.role,
+  });
+
   return ref.id;
 }
 
@@ -242,6 +362,17 @@ export async function acceptInvite(inviteId: string, displayName: string) {
   if (invite.email !== user.email.toLowerCase()) {
     throw new Error("Este convite é para outro e-mail.");
   }
+
+  const clinic = await loadClinic(invite.clinicId);
+  if (!clinic) throw new Error("Clínica do convite não existe.");
+  const members = await listClinicMembers(invite.clinicId);
+  const alreadyMember = members.some((m) => m.uid === user.uid);
+  const seatGate = canAcceptInvite({
+    seats: clinic.seats,
+    memberCount: members.length,
+    alreadyMember,
+  });
+  if (!seatGate.ok) throw new Error(seatGate.reason);
 
   const now = new Date().toISOString();
   const member: ClinicMember = {

@@ -32,6 +32,8 @@ export type Clinic = {
   notes: string;
   createdAt: string;
   updatedAt: string;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
 };
 
 export type ClinicMember = {

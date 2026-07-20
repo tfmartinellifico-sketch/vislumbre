@@ -40,7 +40,7 @@ Ver `/diferenca` e `docs/claims-permitidos.md`.
 
 ## Publicar (Vercel)
 
-Passo a passo: `docs/deploy-vercel.md` · config em `vercel.json`.
+Domínio: **https://vislumbre.me** · `docs/deploy-vercel.md` · `docs/dominio-vislumbre-me.md`
 
 ## Docs
 
