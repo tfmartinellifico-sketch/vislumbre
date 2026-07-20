@@ -23,6 +23,29 @@ import {
   type SavedConsulta,
 } from "@/lib/storage";
 import { SCENARIOS } from "@/lib/regions";
+import {
+  createMemberInvite,
+  createTicket,
+  deleteMyAccount,
+  listClinicMembers,
+  listMyTickets,
+  loadClinic,
+  loadMyClinicId,
+  logUsage,
+} from "@/lib/platform";
+import {
+  isClinicAccessAllowed,
+  PLAN_LABELS,
+  STATUS_LABELS,
+  type Clinic,
+  type ClinicMember,
+  type SupportTicket,
+} from "@/lib/platform-types";
+import {
+  exportHistoryCsv,
+  exportHistoryJson,
+  exportTransferPack,
+} from "@/lib/exportData";
 
 export function ClinicaPanel() {
   const [profile, setProfile] = useState<ProfessionalProfile>({
@@ -36,7 +59,14 @@ export function ClinicaPanel() {
   const [user, setUser] = useState<User | null>(null);
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudMessage, setCloudMessage] = useState("");
-  const [showCloudLater, setShowCloudLater] = useState(false);
+  const [clinic, setClinic] = useState<Clinic | null>(null);
+  const [members, setMembers] = useState<ClinicMember[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketBody, setTicketBody] = useState("");
+  const [actionMsg, setActionMsg] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -46,42 +76,66 @@ export function ClinicaPanel() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handleUserChange = useCallback(async (next: User | null) => {
-    setUser(next);
-    if (!next) return;
-    setCloudBusy(true);
-    try {
-      const [cloudProfile, cloudHistory] = await Promise.all([
-        loadCloudProfile(),
-        loadCloudHistory(),
-      ]);
-      if (cloudProfile) {
-        setProfile(cloudProfile);
-        saveProfile(cloudProfile);
-      }
-      if (cloudHistory.length) {
-        const local = loadHistory();
-        const merged = mergeHistory(local, cloudHistory);
-        setHistory(merged);
-        merged.forEach((entry) => {
-          const existing = loadHistory().some((item) => item.id === entry.id);
-          if (!existing) {
-            // Mantém o cache local compatível sem duplicar itens já existentes.
-            local.push(entry);
-          }
-        });
-        localStorage.setItem(
-          "vislumbre.history.v1",
-          JSON.stringify(merged.slice(0, 40)),
-        );
-      }
-      setCloudMessage("Dados da nuvem carregados.");
-    } catch {
-      setCloudMessage("Não foi possível carregar a nuvem. O modo local segue ativo.");
-    } finally {
-      setCloudBusy(false);
+  const loadOrg = useCallback(async () => {
+    const clinicId = await loadMyClinicId();
+    if (!clinicId) {
+      setClinic(null);
+      setMembers([]);
+      return;
     }
+    const [c, m, t] = await Promise.all([
+      loadClinic(clinicId),
+      listClinicMembers(clinicId),
+      listMyTickets(),
+    ]);
+    setClinic(c);
+    setMembers(m);
+    setTickets(t);
   }, []);
+
+  const handleUserChange = useCallback(
+    async (next: User | null) => {
+      setUser(next);
+      if (!next) {
+        setClinic(null);
+        setMembers([]);
+        return;
+      }
+      setCloudBusy(true);
+      try {
+        await logUsage({
+          type: "login",
+          userId: next.uid,
+          clinicId: await loadMyClinicId(),
+        });
+        const [cloudProfile, cloudHistory] = await Promise.all([
+          loadCloudProfile(),
+          loadCloudHistory(),
+        ]);
+        if (cloudProfile) {
+          setProfile(cloudProfile);
+          saveProfile(cloudProfile);
+        }
+        if (cloudHistory.length) {
+          const merged = mergeHistory(loadHistory(), cloudHistory);
+          setHistory(merged);
+          localStorage.setItem(
+            "vislumbre.history.v1",
+            JSON.stringify(merged.slice(0, 40)),
+          );
+        }
+        await loadOrg();
+        setCloudMessage("Dados da nuvem carregados.");
+      } catch {
+        setCloudMessage(
+          "Não foi possível carregar a nuvem. O modo local segue ativo.",
+        );
+      } finally {
+        setCloudBusy(false);
+      }
+    },
+    [loadOrg],
+  );
 
   async function persist() {
     saveProfile(profile);
@@ -89,7 +143,7 @@ export function ClinicaPanel() {
       setCloudBusy(true);
       try {
         await saveCloudProfile(profile);
-        setCloudMessage("Perfil sincronizado com o Firebase.");
+        setCloudMessage("Perfil sincronizado.");
       } catch {
         setCloudMessage("Perfil salvo localmente; falha ao sincronizar.");
       } finally {
@@ -104,9 +158,9 @@ export function ClinicaPanel() {
     setCloudBusy(true);
     try {
       await migrateLocalData(loadProfile(), loadHistory());
-      setCloudMessage("Dados locais enviados ao Firebase.");
+      setCloudMessage("Dados locais enviados à nuvem.");
     } catch {
-      setCloudMessage("Falha na migração. Nenhum dado local foi perdido.");
+      setCloudMessage("Falha na migração.");
     } finally {
       setCloudBusy(false);
     }
@@ -118,7 +172,7 @@ export function ClinicaPanel() {
       try {
         await deleteCloudConsulta(id);
       } catch {
-        setCloudMessage("Excluído localmente, mas a nuvem não respondeu.");
+        setCloudMessage("Excluído localmente; nuvem não respondeu.");
       }
     }
   }
@@ -130,10 +184,12 @@ export function ClinicaPanel() {
       try {
         await clearCloudHistory();
       } catch {
-        setCloudMessage("Histórico local limpo; falha ao limpar a nuvem.");
+        setCloudMessage("Histórico local limpo; falha na nuvem.");
       }
     }
   }
+
+  const accessOk = isClinicAccessAllowed(clinic);
 
   return (
     <div className="grain atmosphere min-h-screen">
@@ -141,8 +197,8 @@ export function ClinicaPanel() {
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
           <Logo href="/" size="md" />
           <div className="flex items-center gap-3 text-[13px]">
-            <Link href="/" className="text-ink-soft hover:text-ink">
-              Site
+            <Link href="/entrar" className="text-ink-soft hover:text-ink">
+              Conta / trial
             </Link>
             <Link href="/consulta" className="btn-primary !py-2 !px-3.5">
               Abrir ferramenta
@@ -151,174 +207,345 @@ export function ClinicaPanel() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-12 md:py-16">
-        <section className="mb-12">
-          <p className="text-[11px] uppercase tracking-[0.26em] text-sea">
-            Clínica
-          </p>
+      <main className="mx-auto max-w-5xl space-y-12 px-5 py-12 md:py-16">
+        <section>
+          <p className="eyebrow">Clínica</p>
           <h1 className="display mt-3 text-4xl tracking-tight md:text-5xl">
-            Perfil e histórico
+            Conta, equipe e dados
           </h1>
           <p className="mt-4 max-w-2xl text-[15px] leading-[1.7] text-ink-soft">
-            Guarde o nome do profissional e as consultas exportadas. Cadastro na
-            nuvem é opcional — a ferramenta funciona sem isso.
+            Perfil, histórico, exportação para o prontuário, convites de equipe,
+            plano e suporte. Fotos das pacientes não sobem para a nuvem.
           </p>
-          <Link href="/consulta" className="btn-primary mt-7">
-            Ir para a consulta
-          </Link>
         </section>
 
-        <div className="grid gap-10 md:grid-cols-2">
-        <section>
-          <p className="text-xs uppercase tracking-[0.2em] text-sea">Clínica</p>
-          <h2 className="display mt-2 text-4xl">Perfil profissional</h2>
-          <p className="mt-2 text-sm text-ink-soft">
-            Opcional. Salvo neste navegador e preenche a consulta.
-          </p>
-          <div className="mt-6 space-y-3">
-            {(
-              [
-                ["name", "Nome"],
-                ["registry", "Registro (CRM / outro)"],
-                ["clinic", "Clínica"],
-                ["city", "Cidade"],
-              ] as const
-            ).map(([key, label]) => (
-              <label key={key} className="block text-xs text-ink-soft">
-                {label}
-                <input
-                  value={profile[key]}
-                  onChange={(e) =>
-                    setProfile((p) => ({ ...p, [key]: e.target.value }))
-                  }
-                  className="mt-1 w-full rounded-md border border-ink/15 bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-sea"
-                />
-              </label>
-            ))}
-            <button
-              type="button"
-              disabled={cloudBusy}
-              onClick={persist}
-              className="rounded-md bg-ink px-4 py-2.5 text-sm text-paper disabled:opacity-50"
-            >
-              Salvar perfil
-            </button>
-            {savedMsg && (
-              <p className="text-xs text-sea">Perfil salvo neste dispositivo.</p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-sea">Histórico</p>
-              <h2 className="display mt-2 text-4xl">Consultas salvas</h2>
+        <section className="grid gap-6 md:grid-cols-2">
+          <div>
+            <h2 className="display text-2xl">Acesso</h2>
+            <div className="mt-4">
+              <FirebaseAccount onUserChange={handleUserChange} />
             </div>
-            {history.length > 0 && (
+            {cloudMessage && (
+              <p className="mt-2 text-[12px] text-sea-deep">{cloudMessage}</p>
+            )}
+            {user && (
               <button
                 type="button"
-                onClick={removeAll}
-                className="text-xs text-warn underline-offset-2 hover:underline"
+                disabled={cloudBusy}
+                onClick={migrate}
+                className="mt-3 text-[12px] text-sea-deep underline"
               >
-                Limpar tudo
+                Enviar histórico local para a nuvem
               </button>
             )}
-          </div>
-          <p className="mt-2 text-sm text-ink-soft">
-            {history.length} sessão(ões) guardada(s).{" "}
-            {user
-              ? "Também sincronizadas na sua conta."
-              : "Salvas neste navegador."}
-          </p>
-          <ul className="mt-6 max-h-[28rem] space-y-3 overflow-y-auto">
-            {history.length === 0 && (
-              <li className="rounded-xl border border-dashed border-ink/15 px-4 py-8 text-center text-[14px] text-ink-soft">
-                Ainda não há registros. Exporte um PDF na ferramenta para
-                aparecer aqui.
-              </li>
+            {!user && (
+              <p className="mt-3 text-[13px] text-ink-soft">
+                Sem conta, tudo fica só neste navegador.{" "}
+                <Link href="/entrar" className="text-sea-deep underline">
+                  Criar trial ou aceitar convite
+                </Link>
+              </p>
             )}
-            {history.map((item) => {
-              const scenario = SCENARIOS.find((s) => s.id === item.scenario);
-              return (
-                <li
-                  key={item.id}
-                  className="rounded-lg border border-ink/10 bg-paper/90 px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-ink">
-                        {item.patientLabel || "Paciente sem rótulo"}
-                      </p>
-                      <p className="mt-1 text-[11px] text-ink-soft">
-                        {new Date(item.createdAt).toLocaleString("pt-BR")} ·{" "}
-                        {scenario?.label} · {item.marks.length} marcações ·{" "}
-                        {item.topics.length} tópicos
-                      </p>
-                      {item.notes && (
-                        <p className="mt-2 line-clamp-2 text-xs text-ink-soft">
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeOne(item.id)}
-                      className="text-[11px] text-ink-soft hover:text-warn"
-                    >
-                      Apagar
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        </div>
+          </div>
 
-        <section className="mt-14 border-t border-ink/10 pt-8">
-          <button
-            type="button"
-            onClick={() => setShowCloudLater((v) => !v)}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-ink-soft">
-                Depois
-              </p>
-              <h2 className="display mt-1 text-2xl text-ink-soft">
-                Conta opcional (depois)
-              </h2>
-            </div>
-            <span className="text-xs text-sea">
-              {showCloudLater ? "Ocultar" : "Mostrar"}
-            </span>
-          </button>
-          {showCloudLater && (
-            <div className="mt-5 grid gap-5 md:grid-cols-[1fr_1.2fr]">
-              <p className="text-sm leading-relaxed text-ink-soft">
-                Só se quiser o histórico em mais de um aparelho. Fotos da
-                paciente não sobem — ficam neste computador ou celular.
-              </p>
-              <div>
-                <FirebaseAccount onUserChange={handleUserChange} />
-                {user && (
-                  <button
-                    type="button"
-                    disabled={cloudBusy}
-                    onClick={migrate}
-                    className="mt-3 rounded-md border border-sea/30 px-3 py-2 text-xs text-sea-deep disabled:opacity-50"
-                  >
-                    Enviar dados locais para a nuvem
-                  </button>
+          <div>
+            <h2 className="display text-2xl">Plano</h2>
+            {clinic ? (
+              <div className="mt-4 rounded-xl border border-ink/10 bg-paper p-4 text-[13px]">
+                <p className="font-medium text-ink">{clinic.name}</p>
+                <p className="mt-1 text-ink-soft">
+                  {STATUS_LABELS[clinic.status]} · {PLAN_LABELS[clinic.plan]}
+                </p>
+                {clinic.trialEndsAt && clinic.status === "trial" && (
+                  <p className="mt-1 text-ink-soft">
+                    Trial até{" "}
+                    {new Date(clinic.trialEndsAt).toLocaleDateString("pt-BR")}
+                  </p>
                 )}
-                {cloudMessage && (
-                  <p className="mt-2 text-xs text-sea-deep">{cloudMessage}</p>
+                {!accessOk && (
+                  <p className="mt-3 text-warn">
+                    Acesso suspenso ou trial encerrado. Fale com o suporte ou
+                    aguarde ativação do administrador Vislumbre.
+                  </p>
                 )}
+                <p className="mt-3 text-[12px] text-ink-soft">
+                  Pagamento: ativação manual pelo admin nesta fase. Em breve
+                  checkout Asaas/Stripe.
+                </p>
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="mt-4 text-[13px] text-ink-soft">
+                Nenhuma clínica vinculada.{" "}
+                <Link href="/entrar" className="text-sea-deep underline">
+                  Iniciar trial
+                </Link>
+              </p>
+            )}
+          </div>
         </section>
+
+        <section className="grid gap-10 md:grid-cols-2">
+          <div>
+            <h2 className="display text-2xl">Perfil profissional</h2>
+            <div className="mt-4 space-y-3">
+              {(
+                [
+                  ["name", "Nome"],
+                  ["registry", "Registro (CRM / outro)"],
+                  ["clinic", "Clínica"],
+                  ["city", "Cidade"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block text-xs text-ink-soft">
+                  {label}
+                  <input
+                    value={profile[key]}
+                    onChange={(e) =>
+                      setProfile((p) => ({ ...p, [key]: e.target.value }))
+                    }
+                    className="mt-1 w-full rounded-md border border-ink/15 bg-paper px-3 py-2 text-sm text-ink outline-none focus:border-sea"
+                  />
+                </label>
+              ))}
+              <button
+                type="button"
+                disabled={cloudBusy}
+                onClick={persist}
+                className="rounded-md bg-ink px-4 py-2.5 text-sm text-paper disabled:opacity-50"
+              >
+                Salvar perfil
+              </button>
+              {savedMsg && (
+                <p className="text-xs text-sea">Perfil salvo.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-end justify-between gap-3">
+              <h2 className="display text-2xl">Histórico</h2>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={removeAll}
+                  className="text-xs text-warn underline"
+                >
+                  Limpar tudo
+                </button>
+              )}
+            </div>
+            <p className="mt-2 text-sm text-ink-soft">
+              {history.length} sessão(ões). Fotos não entram neste histórico em
+              nuvem.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => exportHistoryJson(history)}
+                className="rounded-lg border border-ink/10 px-3 py-1.5 text-[12px]"
+              >
+                Exportar JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => exportHistoryCsv(history)}
+                className="rounded-lg border border-ink/10 px-3 py-1.5 text-[12px]"
+              >
+                Exportar CSV
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  exportTransferPack(history, profile.clinic || clinic?.name || "")
+                }
+                className="rounded-lg border border-sea/30 bg-sea/[0.06] px-3 py-1.5 text-[12px] text-sea-deep"
+              >
+                Pacote para prontuário
+              </button>
+            </div>
+            <ul className="mt-4 max-h-[22rem] space-y-3 overflow-y-auto">
+              {history.length === 0 && (
+                <li className="rounded-xl border border-dashed border-ink/15 px-4 py-8 text-center text-[14px] text-ink-soft">
+                  Exporte um PDF na ferramenta para aparecer aqui.
+                </li>
+              )}
+              {history.map((item) => {
+                const scenario = SCENARIOS.find((s) => s.id === item.scenario);
+                return (
+                  <li
+                    key={item.id}
+                    className="rounded-lg border border-ink/10 bg-paper/90 px-4 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm text-ink">
+                          {item.patientLabel || "Paciente sem rótulo"}
+                        </p>
+                        <p className="mt-1 text-[11px] text-ink-soft">
+                          {new Date(item.createdAt).toLocaleString("pt-BR")} ·{" "}
+                          {scenario?.label}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeOne(item.id)}
+                        className="text-[11px] text-ink-soft hover:text-warn"
+                      >
+                        Apagar
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+
+        {clinic && (
+          <section className="rounded-2xl border border-ink/10 bg-paper p-6">
+            <h2 className="display text-2xl">Equipe</h2>
+            <p className="mt-2 text-[13px] text-ink-soft">
+              Até {clinic.seats} assentos. Convide pelo e-mail do profissional.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {members.map((m) => (
+                <li
+                  key={m.uid}
+                  className="flex justify-between text-[13px] text-ink-soft"
+                >
+                  <span>
+                    {m.name || m.email} · {m.role}
+                  </span>
+                  <span className="text-[11px]">{m.email}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="email@clinica.com"
+                className="rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const id = await createMemberInvite({
+                      clinicId: clinic.id,
+                      clinicName: clinic.name,
+                      email: inviteEmail,
+                      role: "member",
+                    });
+                    setInviteLink(
+                      `${window.location.origin}/entrar?invite=${id}`,
+                    );
+                    setActionMsg("Convite gerado.");
+                  } catch (err) {
+                    setActionMsg(
+                      err instanceof Error ? err.message : "Falha no convite.",
+                    );
+                  }
+                }}
+                className="btn-primary !py-2"
+              >
+                Gerar convite
+              </button>
+            </div>
+            {inviteLink && (
+              <p className="mt-3 break-all text-[12px] text-sea-deep">
+                {inviteLink}
+              </p>
+            )}
+          </section>
+        )}
+
+        <section className="grid gap-8 md:grid-cols-2">
+          <div className="rounded-2xl border border-ink/10 bg-paper p-6">
+            <h2 className="display text-2xl">Suporte</h2>
+            <div className="mt-4 space-y-3">
+              <input
+                value={ticketSubject}
+                onChange={(e) => setTicketSubject(e.target.value)}
+                placeholder="Assunto"
+                className="w-full rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
+              />
+              <textarea
+                value={ticketBody}
+                onChange={(e) => setTicketBody(e.target.value)}
+                placeholder="Descreva o problema"
+                rows={3}
+                className="w-full rounded-xl border border-ink/15 px-3 py-2 text-[13px]"
+              />
+              <button
+                type="button"
+                disabled={!user}
+                onClick={async () => {
+                  try {
+                    await createTicket(ticketSubject, ticketBody);
+                    setTicketSubject("");
+                    setTicketBody("");
+                    setTickets(await listMyTickets());
+                    setActionMsg("Ticket enviado.");
+                  } catch (err) {
+                    setActionMsg(
+                      err instanceof Error ? err.message : "Falha ao enviar.",
+                    );
+                  }
+                }}
+                className="btn-primary !py-2 disabled:opacity-40"
+              >
+                Abrir ticket
+              </button>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {tickets.map((t) => (
+                <li key={t.id} className="text-[12px] text-ink-soft">
+                  {t.subject} · {t.status}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-warn/20 bg-warn/[0.04] p-6">
+            <h2 className="display text-2xl text-ink">Excluir conta</h2>
+            <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+              Apaga perfil, histórico na nuvem e vínculo com a clínica. Fotos
+              locais você remove no próprio aparelho. Irreversível.
+            </p>
+            <button
+              type="button"
+              disabled={!user}
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    "Excluir sua conta Vislumbre definitivamente?",
+                  )
+                ) {
+                  return;
+                }
+                try {
+                  await deleteMyAccount();
+                  clearHistory();
+                  setHistory([]);
+                  setUser(null);
+                  setActionMsg("Conta excluída.");
+                } catch (err) {
+                  setActionMsg(
+                    err instanceof Error ? err.message : "Falha na exclusão.",
+                  );
+                }
+              }}
+              className="mt-4 rounded-lg border border-warn/40 px-4 py-2 text-[13px] text-warn disabled:opacity-40"
+            >
+              Excluir minha conta
+            </button>
+          </div>
+        </section>
+
+        {actionMsg && (
+          <p className="text-[13px] text-sea-deep">{actionMsg}</p>
+        )}
       </main>
     </div>
   );

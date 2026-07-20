@@ -6,6 +6,7 @@ import { Logo } from "@/components/brand/Logo";
 import { HeroVisual } from "./HeroVisual";
 import { ArSection } from "./ArSection";
 import { RoadmapSection } from "./RoadmapSection";
+import { LeadForm } from "./LeadForm";
 
 const fade = {
   initial: { opacity: 0, y: 20 },
@@ -35,6 +36,9 @@ export function LandingPage() {
             </Link>
             <Link href="/kit" className="hidden hover:text-ink sm:inline">
               Kit
+            </Link>
+            <Link href="/entrar" className="hidden hover:text-ink sm:inline">
+              Trial / entrar
             </Link>
             <Link href="/consulta" className="btn-primary !rounded-full !py-2.5 !px-5">
               Abrir ferramenta
@@ -245,6 +249,27 @@ export function LandingPage() {
 
         <RoadmapSection />
 
+        <section id="contato" className="section-pad border-t border-ink/8">
+          <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-2 md:items-start">
+            <div>
+              <p className="eyebrow">Para clínicas</p>
+              <h2 className="display mt-4 text-4xl tracking-tight md:text-5xl">
+                Quer piloto ou demonstração?
+              </h2>
+              <p className="mt-5 text-[15px] leading-[1.75] text-ink-soft">
+                Deixe seus dados. Entramos em contato para liberar trial,
+                agendar demo ou ativar a clínica.
+              </p>
+              <ul className="mt-6 space-y-2 text-[14px] text-ink-soft">
+                <li>· Trial de 14 dias com criação de conta</li>
+                <li>· Convite de equipe na mesma clínica</li>
+                <li>· Exportação do histórico para o prontuário</li>
+              </ul>
+            </div>
+            <LeadForm source="landing" />
+          </div>
+        </section>
+
         {/* CTA */}
         <section className="section-pad border-t border-ink/8 bg-fog">
           <motion.div
@@ -293,8 +318,11 @@ export function LandingPage() {
             <Link href="/#status" className="hover:text-ink">
               Status
             </Link>
-            <Link href="/clinica" className="hover:text-ink">
-              Clínica
+            <Link href="/entrar" className="hover:text-ink">
+              Entrar
+            </Link>
+            <Link href="/#contato" className="hover:text-ink">
+              Contato
             </Link>
           </nav>
           <p className="text-[12px] text-ink-soft">

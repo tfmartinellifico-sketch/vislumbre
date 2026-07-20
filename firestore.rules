@@ -2,14 +2,100 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userClinicId() {
+      return signedIn() && userDoc().data.clinicId;
+    }
+
+    function isClinicMember(clinicId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/clinics/$(clinicId)/members/$(request.auth.uid));
+    }
+
+    function isClinicOwnerOrAdmin(clinicId) {
+      return isClinicMember(clinicId)
+        && get(/databases/$(database)/documents/clinics/$(clinicId)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if isAdmin();
+    }
+
     match /users/{userId} {
       allow read, create, update, delete:
-        if request.auth != null && request.auth.uid == userId;
+        if signedIn() && request.auth.uid == userId;
+      allow read: if isAdmin();
 
       match /consultations/{consultationId} {
         allow read, create, update, delete:
-          if request.auth != null && request.auth.uid == userId;
+          if signedIn() && request.auth.uid == userId;
+        allow read: if isAdmin();
       }
+    }
+
+    match /leads/{leadId} {
+      allow create: if request.resource.data.keys().hasAll([
+          'name', 'email', 'phone', 'clinic', 'city', 'message', 'status', 'source', 'createdAt'
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.status == 'novo';
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /clinics/{clinicId} {
+      allow read: if isAdmin() || isClinicMember(clinicId);
+      allow create: if signedIn();
+      allow update: if isAdmin() || isClinicOwnerOrAdmin(clinicId);
+      allow delete: if isAdmin();
+
+      match /members/{memberId} {
+        allow read: if isAdmin() || isClinicMember(clinicId);
+        allow create, update: if isAdmin()
+          || (signedIn() && request.auth.uid == memberId)
+          || isClinicOwnerOrAdmin(clinicId);
+        allow delete: if isAdmin() || isClinicOwnerOrAdmin(clinicId)
+          || (signedIn() && request.auth.uid == memberId);
+      }
+    }
+
+    match /invites/{inviteId} {
+      // Link de convite pode ser aberto antes do login
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || signedIn();
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.email == request.auth.token.email);
+      allow delete: if isAdmin();
+    }
+
+    match /tickets/{ticketId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /usage_events/{eventId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /{document=**} {

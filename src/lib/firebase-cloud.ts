@@ -25,12 +25,16 @@ import type { ProfessionalProfile, SavedConsulta } from "./storage";
 
 export { isFirebaseConfigured };
 
-function requireServices() {
+export function requireConfigured() {
   const { auth, db } = getFirebaseServices();
   if (!auth || !db) {
     throw new Error("Firebase ainda não foi configurado.");
   }
   return { auth, db };
+}
+
+function requireServices() {
+  return requireConfigured();
 }
 
 export function observeUser(callback: (user: User | null) => void) {

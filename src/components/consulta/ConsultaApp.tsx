@@ -59,6 +59,8 @@ import {
   type SavedConsulta,
 } from "@/lib/storage";
 import { currentUser, saveCloudConsulta } from "@/lib/firebase-cloud";
+import { loadClinic, loadMyClinicId, logUsage } from "@/lib/platform";
+import { isClinicAccessAllowed, type Clinic } from "@/lib/platform-types";
 
 type ArDevice = "phone" | "glasses";
 type StepId = (typeof STEPS_UI)[number]["id"];
@@ -95,6 +97,7 @@ export function ConsultaApp() {
   const [preference, setPreference] = useState<PatientPreference | null>(null);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [showedExaggerated, setShowedExaggerated] = useState(false);
+  const [clinicAccess, setClinicAccess] = useState<Clinic | null>(null);
 
   function selectScenario(id: ScenarioId) {
     setScenario(id);
@@ -140,6 +143,17 @@ export function ConsultaApp() {
         );
       }
       if (!hasSeenOnboarding()) setShowOnboarding(true);
+      void (async () => {
+        try {
+          const id = await loadMyClinicId();
+          if (id) {
+            const c = await loadClinic(id);
+            setClinicAccess(c);
+          }
+        } catch {
+          /* offline / sem firebase */
+        }
+      })();
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -206,6 +220,13 @@ export function ConsultaApp() {
       saveConsulta(entry);
       if (currentUser()) {
         await saveCloudConsulta(entry);
+        const clinicId = await loadMyClinicId();
+        await logUsage({
+          type: "consulta_export",
+          userId: currentUser()?.uid ?? null,
+          clinicId,
+          meta: entry.id,
+        });
       }
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 2500);
@@ -373,6 +394,20 @@ export function ConsultaApp() {
       </header>
 
       <EthicsStrip />
+
+      {clinicAccess && !isClinicAccessAllowed(clinicAccess) && (
+        <div className="border-b border-warn/30 bg-warn/[0.08] px-4 py-3 text-center text-[13px] text-warn">
+          Acesso da clínica suspenso ou trial encerrado.{" "}
+          <Link href="/clinica" className="underline">
+            Ver status
+          </Link>{" "}
+          ou{" "}
+          <Link href="/#contato" className="underline">
+            fale conosco
+          </Link>
+          .
+        </div>
+      )}
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 py-8 md:grid-cols-[1.15fr_0.85fr] md:px-6 md:py-10">
         <AnimatePresence mode="wait">
