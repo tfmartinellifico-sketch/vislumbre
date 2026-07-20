@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { FaceCanvas } from "./FaceCanvas";
+import { FaceMesh3D } from "./FaceMesh3D";
 import { ScenarioCompare } from "./ScenarioCompare";
 import { DualAngleView } from "./DualAngleView";
 import {
@@ -11,6 +12,7 @@ import {
   type Mark,
   type ScenarioId,
 } from "@/lib/regions";
+import type { LandmarkPoint } from "@/lib/faceLandmarks";
 import { SCRIPT_LINES } from "@/lib/planning";
 import {
   PREFERENCE_OPTIONS,
@@ -30,6 +32,7 @@ type Props = {
   dual?: boolean;
   preference?: PatientPreference | null;
   onPreference?: (v: PatientPreference) => void;
+  faceLandmarks?: LandmarkPoint[] | null;
 };
 
 export function PresentMode({
@@ -43,6 +46,7 @@ export function PresentMode({
   dual = false,
   preference = null,
   onPreference,
+  faceLandmarks = null,
 }: Props) {
   const [view, setView] = useState<ViewMode>(() =>
     dual ? "dual" : compare ? "compare" : "single",
@@ -169,6 +173,15 @@ export function PresentMode({
               active={scenario}
               onSelect={onScenario}
             />
+          ) : faceLandmarks?.length ? (
+            <div className="mx-auto max-w-2xl">
+              <FaceMesh3D
+                faceLandmarks={faceLandmarks}
+                marks={marks}
+                scenario={scenario}
+                autoRotate
+              />
+            </div>
           ) : (
             <div className="mx-auto max-w-xl">
               <FaceCanvas
@@ -179,6 +192,7 @@ export function PresentMode({
                 scenario={scenario}
                 onAddMark={() => undefined}
                 interactive={false}
+                faceLandmarks={faceLandmarks}
               />
             </div>
           )}
